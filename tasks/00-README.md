@@ -18,7 +18,7 @@ objetivo, contexto, checklist e critérios de aceite executáveis.
 | [02](02-infra-docker-dev.md) | Infraestrutura Docker de dev | ✅ concluída |
 | [03](03-modelagem-dados-prisma.md) | Modelagem de dados (Prisma) | ✅ concluída |
 | [04](04-bootstrap-api-nestjs.md) | Bootstrap da API NestJS | ✅ concluída |
-| [05](05-auth-api-key.md) | Autenticação por API key | ⬜ pendente |
+| [05](05-auth-api-key.md) | Autenticação por API key | ✅ concluída |
 | [06](06-auth-painel-jwt.md) | Autenticação do painel (JWT) | ⬜ pendente |
 | [07](07-cliente-waha.md) | Cliente WAHA tipado | ⬜ pendente |
 | [08](08-aplicacoes-api-keys.md) | Aplicações e API keys (admin) | ⬜ pendente |
