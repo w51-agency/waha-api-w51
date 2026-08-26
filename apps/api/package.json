@@ -1,0 +1,12 @@
+{
+  "name": "@gateway/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gateway API — NestJS. Estrutura montada na tarefa 04.",
+  "scripts": {
+    "build": "echo '[api] ainda não implementada (tarefa 04)' && exit 0",
+    "dev": "echo '[api] ainda não implementada (tarefa 04)' && exit 0",
+    "typecheck": "echo '[api] ainda não implementada (tarefa 04)' && exit 0",
+    "test": "echo '[api] ainda não implementada (tarefa 04)' && exit 0"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "waha-api-w51",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gateway multi-sistema de WhatsApp sobre WAHA (motor NOWEB), com API documentada, API keys por integrador e painel administrativo",
+  "packageManager": "pnpm@10.16.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm -r test:e2e",
+    "clean": "pnpm -r exec rm -rf dist node_modules/.cache && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "globals": "^16.4.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.2"
+  }
+}

@@ -1,0 +1,44 @@
+# dependências
+node_modules/
+.pnpm-store/
+
+# build
+dist/
+build/
+*.tsbuildinfo
+.turbo/
+apps/web/dist/
+
+# ambiente — NUNCA versionar
+.env
+.env.*
+!.env.example
+
+# dados locais
+.sessions/
+backups/
+*.sql
+*.sql.gz
+
+# logs
+*.log
+logs/
+npm-debug.log*
+pnpm-debug.log*
+
+# testes
+coverage/
+.nyc_output/
+
+# editores / SO
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# temporários do projeto
+qr.png
+tmp/
+/tasks
+.plan
+tasks/

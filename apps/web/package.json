@@ -1,0 +1,12 @@
+{
+  "name": "@gateway/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Painel administrativo — React + Vite. Estrutura montada na tarefa 16.",
+  "scripts": {
+    "build": "echo '[web] ainda não implementada (tarefa 16)' && exit 0",
+    "dev": "echo '[web] ainda não implementada (tarefa 16)' && exit 0",
+    "typecheck": "echo '[web] ainda não implementada (tarefa 16)' && exit 0",
+    "test": "echo '[web] ainda não implementada (tarefa 16)' && exit 0"
+  }
+}
