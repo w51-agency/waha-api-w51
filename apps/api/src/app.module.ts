@@ -1,6 +1,7 @@
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 
 import { AppController } from './app.controller';
@@ -16,6 +17,7 @@ import { AccountModule } from './modules/account/account.module';
 import { AdminAuthModule } from './modules/admin-auth/admin-auth.module';
 import { ApplicationsModule } from './modules/applications/applications.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { SessionsModule } from './modules/sessions/sessions.module';
 import { WahaModule } from './modules/waha/waha.module';
 import { ApiKeyGuard } from './modules/api-keys/api-key.guard';
 import { ApiKeyModule } from './modules/api-keys/api-key.module';
@@ -24,6 +26,7 @@ import { ApiKeyModule } from './modules/api-keys/api-key.module';
   imports: [
     ConfigModule,
     LoggingModule,
+    ScheduleModule.forRoot(),
     PrismaModule,
     RedisModule,
     WahaModule,
@@ -53,6 +56,7 @@ import { ApiKeyModule } from './modules/api-keys/api-key.module';
     AdminAuthModule,
     AuditModule,
     ApplicationsModule,
+    SessionsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,6 +1,6 @@
 # 09 — Sessões e fluxo de QR rastreado
 
-**Status:** ⬜ pendente
+**Status:** ✅ CONCLUÍDA
 **Depende de:** 05, 07, 08
 **Habilita:** 10, 11, 12, 17
 
@@ -61,49 +61,49 @@ Detalhes que evitam dor depois:
 ## Checklist
 
 ### Criação
-- [ ] `POST /v1/sessions` — `{ label?, metadata? }`; nome técnico gerado `{slug}--{nanoid8}`
-- [ ] `webhookSecret` aleatório por sessão, persistido
-- [ ] Config enviada ao WAHA com `metadata` de rastreio, `noweb.store.enabled: true`, `fullSync: false` e o webhook do gateway com retries exponenciais
-- [ ] `Session` local criada **antes** da chamada ao WAHA, e limpa (ou marcada FAILED) se o WAHA recusar — sem registro fantasma
-- [ ] Limite de sessões por aplicação configurável (`MAX_SESSIONS_PER_APP`, 0 = ilimitado)
-- [ ] `label` único por aplicação, se informado
+- [x] `POST /v1/sessions` — `{ label?, metadata? }`; nome técnico gerado `{slug}--{nanoid8}`
+- [x] `webhookSecret` aleatório por sessão, persistido
+- [x] Config enviada ao WAHA com `metadata` de rastreio, `noweb.store.enabled: true`, `fullSync: false` e o webhook do gateway com retries exponenciais
+- [x] `Session` local criada **antes** da chamada ao WAHA, e limpa (ou marcada FAILED) se o WAHA recusar — sem registro fantasma
+- [x] Limite de sessões por aplicação configurável (`MAX_SESSIONS_PER_APP`, 0 = ilimitado)
+- [x] `label` único por aplicação, se informado
 
 ### QR — o registro de origem
-- [ ] `GET /v1/sessions/{id}/qr?format=image|raw` — default `image` (PNG binário)
-- [ ] Incrementa `qrRequestCount`, grava `lastQrRequestedAt`
-- [ ] Grava `AuditLog` `session.qr.requested` com `actorId` = id da API key, IP e user-agent
-- [ ] Se a sessão não estiver em `SCAN_QR_CODE`, devolve 409 com o status atual e explicação em PT-BR (ex.: "Sessão já conectada")
-- [ ] `POST /v1/sessions/{id}/pairing-code` — `{ phoneNumber }`, mesma trilha de auditoria
-- [ ] `Cache-Control: no-store` na resposta do QR
+- [x] `GET /v1/sessions/{id}/qr?format=image|raw` — default `image` (PNG binário)
+- [x] Incrementa `qrRequestCount`, grava `lastQrRequestedAt`
+- [x] Grava `AuditLog` `session.qr.requested` com `actorId` = id da API key, IP e user-agent
+- [x] Se a sessão não estiver em `SCAN_QR_CODE`, devolve 409 com o status atual e explicação em PT-BR (ex.: "Sessão já conectada")
+- [x] `POST /v1/sessions/{id}/pairing-code` — `{ phoneNumber }`, mesma trilha de auditoria
+- [x] `Cache-Control: no-store` na resposta do QR
 
 ### Ciclo de vida
-- [ ] `GET /v1/sessions` — só as da aplicação; filtros por status; paginado
-- [ ] `GET /v1/sessions/{id}` — inclui `phoneNumber`, `pushName`, `status`, `qrRequestCount`, `connectedAt`
-- [ ] `POST /v1/sessions/{id}/start|stop|restart|logout` — idempotentes
-- [ ] `DELETE /v1/sessions/{id}` — remove no WAHA e depois localmente; sessão já ausente no WAHA não impede a remoção local
-- [ ] `PATCH /v1/sessions/{id}` — atualiza apenas `label` e `metadata` do integrador
+- [x] `GET /v1/sessions` — só as da aplicação; filtros por status; paginado
+- [x] `GET /v1/sessions/{id}` — inclui `phoneNumber`, `pushName`, `status`, `qrRequestCount`, `connectedAt`
+- [x] `POST /v1/sessions/{id}/start|stop|restart|logout` — idempotentes
+- [x] `DELETE /v1/sessions/{id}` — remove no WAHA e depois localmente; sessão já ausente no WAHA não impede a remoção local
+- [x] `PATCH /v1/sessions/{id}` — atualiza apenas `label` e `metadata` do integrador
 
 ### Isolamento
-- [ ] `SessionOwnershipGuard`: sessão de outra aplicação devolve **404**, nunca 403 — não vazar existência
-- [ ] Todas as consultas filtram por `applicationId` na cláusula `where`, sem exceção
-- [ ] Painel admin usa serviço separado, sem o filtro
+- [x] `SessionOwnershipGuard`: sessão de outra aplicação devolve **404**, nunca 403 — não vazar existência
+- [x] Todas as consultas filtram por `applicationId` na cláusula `where`, sem exceção
+- [x] Painel admin usa serviço separado, sem o filtro
 
 ### Reconciliação
-- [ ] Job (`@nestjs/schedule`) a cada `SESSION_SYNC_INTERVAL` (default 60s) comparando estado local × `GET /api/sessions`
-- [ ] Divergência corrigida e logada; sessão sumida do WAHA vira `FAILED` com motivo
-- [ ] Sessão `WORKING` sem `phoneNumber` dispara `GET /api/sessions/{s}/me` para completar o vínculo (rede de segurança do webhook)
-- [ ] Job com lock no Redis para não duplicar com múltiplas instâncias
+- [x] Job (`@nestjs/schedule`) a cada `SESSION_SYNC_INTERVAL` (default 60s) comparando estado local × `GET /api/sessions`
+- [x] Divergência corrigida e logada; sessão sumida do WAHA vira `FAILED` com motivo
+- [x] Sessão `WORKING` sem `phoneNumber` dispara `GET /api/sessions/{s}/me` para completar o vínculo (rede de segurança do webhook)
+- [x] Job com lock no Redis para não duplicar com múltiplas instâncias
 
 ### Documentação
-- [ ] Todos os DTOs com `@ApiProperty`, exemplos e descrições em PT-BR
-- [ ] `GET /qr` documentado com `produces: image/png` e o caso 409
+- [x] Todos os DTOs com `@ApiProperty`, exemplos e descrições em PT-BR
+- [x] `GET /qr` documentado com `produces: image/png` e o caso 409
 
 ### Testes
-- [ ] e2e: criar sessão → WAHA recebe metadata correto (verificar no mock)
-- [ ] e2e: pedir QR incrementa contador e grava auditoria
-- [ ] e2e: aplicação B recebe 404 na sessão da aplicação A
-- [ ] e2e: excluir sessão chama delete no WAHA
-- [ ] unit: reconciliação corrige status divergente
+- [x] e2e: criar sessão → WAHA recebe metadata correto (verificar no mock)
+- [x] e2e: pedir QR incrementa contador e grava auditoria
+- [x] e2e: aplicação B recebe 404 na sessão da aplicação A
+- [x] e2e: excluir sessão chama delete no WAHA
+- [x] unit: reconciliação corrige status divergente
 
 ## Critérios de aceite
 
@@ -133,4 +133,98 @@ pnpm test:e2e -- sessions
 
 ## Notas
 
-_(preencher durante a execução)_
+### O rastreio funciona — verificado no WAHA real
+
+Criada uma sessão pelo "Sistema A", a consulta direta ao WAHA mostrou o carimbo intacto:
+
+```
+metadata:
+  application.id     = cmtama0di0000qqi06mbxqai1
+  application.slug   = sistema-a
+  gateway.session.id = cmtama0id0008qqi0lgkoc36g
+  created.by.apikey  = cmtama0f00004qqi00i16k35b
+webhook : http://host.docker.internal:3001/internal/waha/webhook
+hmac    : configurado
+store   : {enabled: true, fullSync: false}
+```
+
+Como o WAHA devolve esse objeto em **todo webhook**, a tarefa 10 recebe cada evento já
+sabendo de quem é — sem tabela de correlação nem dependência da ordem de chegada.
+
+Pedir o QR três vezes deixou `qrRequestCount = 3` e três linhas de auditoria numeradas.
+
+### Isolamento: 404, nunca 403
+
+Com a chave do Sistema B, **todas** as operações sobre a sessão do Sistema A devolvem 404 —
+`GET`, `/qr`, `/stop`, `DELETE` — e a listagem de B mostra zero sessões. Um 403 confirmaria
+que o id existe, permitindo mapear as sessões alheias por tentativa.
+
+### `expiresInSeconds` no corpo do QR
+
+O QR do WhatsApp gira a cada ~20 s. Sem esse campo, o integrador não tem como saber que
+precisa renovar, e o usuário acaba lendo um código morto — concluindo que o sistema quebrou.
+A resposta também vai com `Cache-Control: no-store`: o QR é credencial de curta duração e
+não pode encostar em cache compartilhado.
+
+### Mensagens de conflito que dizem o que fazer
+
+Cada status impossível tem sua orientação, em vez de um "conflito" genérico:
+
+- parada → *"Chame /start antes de solicitar o QR code."*
+- já conectada → *"Esta sessão já está conectada ao número X. Para trocar de número, use
+  /logout antes."*
+- ainda iniciando → *"Tente novamente em alguns segundos."*
+- falhou → *"Chame /restart para tentar novamente."*
+
+### Nome técnico gerado, nunca reutilizado
+
+`{slug}--{nanoid8}`, com alfabeto sem caracteres ambíguos (aparece em log e URL). O
+integrador escolhe só um `label` humano. Reaproveitar nome de sessão excluída traria de
+volta estado residual guardado pelo WAHA.
+
+### Logout limpa o vínculo
+
+Desfaz o pareamento, então `phoneNumber`, `waId`, `pushName` e `connectedAt` são zerados.
+Mantê-los daria a impressão, no painel, de que o número continua conectado.
+
+### A reconciliação existe porque webhook se perde
+
+`SessionsSyncService` roda a cada minuto com lock no Redis (sem ele, várias instâncias
+fariam o mesmo trabalho e multiplicariam a carga no WAHA). Além de corrigir status
+divergentes, ele trata **o caso que mais importa**: sessão `WORKING` sem `phoneNumber`
+gravado — sinal de que o webhook de conexão se perdeu. Consulta o `/me` do WAHA e recupera
+o vínculo.
+
+Sem essa rede, um gateway fora do ar no instante da conexão perderia o vínculo em silêncio,
+e a funcionalidade principal do produto sumiria sem deixar rastro.
+
+Há também `sincronizarStatus` em cada leitura: alinha o status antes de decidir com base
+nele, para não recusar uma ação legítima por causa de dado velho.
+
+### Verificação executada
+
+```
+criar sessão                   STARTING, engine NOWEB, nome sistema-a--ucevsm33
+metadata no WAHA               4 chaves de rastreio + webhook + hmac + store
+QR                             SCAN_QR_CODE, PNG 292x292, expiresIn 20s
+qrRequestCount                 1 -> 2 -> 3, com lastQrRequestedAt
+/qr.png                        Content-Type image/png, Cache-Control no-store
+
+isolamento (chave do Sistema B sobre sessão do A):
+  GET / qr / stop / DELETE     404 em todos
+  lista do B                   0 sessões
+
+ciclo de vida                  stop -> STOPPED, start -> STARTING, restart -> STARTING
+QR com sessão parada           409 com orientação em PT-BR
+apelido duplicado              409
+
+auditoria da sessão            session.created, qr.requested x3 (numeradas),
+                               stop, start, restart
+
+excluir                        {deleted:true} no gateway e 404 no WAHA
+```
+
+### Pendente para a tarefa 10
+
+O vínculo número ↔ sistema só se fecha quando o webhook `session.status = WORKING` chega —
+ou quando a reconciliação o recupera. A ingestão é a próxima tarefa.
