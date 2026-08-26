@@ -82,5 +82,18 @@ numeradas, cada uma com checklist e critérios de aceite executáveis. Comece pe
 
 ## Documentação
 
-- [`docs/`](docs/) — guia de integração, modelo de dados, deploy e runbook
-- Swagger UI em `/docs` com a API rodando
+- **[Guia de integração](docs/integracao.md)** — do zero à primeira mensagem, com exemplos
+  em curl, Node, PHP e Python
+- [`docs/openapi.json`](docs/openapi.json) — especificação OpenAPI, pronta para gerar client
+- [`docs/collections/`](docs/collections/) — coleções para Insomnia e Postman
+- [`docs/modelo-de-dados.md`](docs/modelo-de-dados.md) — as tabelas e o porquê de cada decisão
+- [`docs/infraestrutura.md`](docs/infraestrutura.md) — os containers, portas e armadilhas
+- Swagger UI navegável em `/docs` com a API rodando (`/docs/admin` para as rotas do painel)
+
+Para regenerar a especificação e as coleções após mudar a API:
+
+```bash
+pnpm openapi:export    # gera docs/openapi.json + coleções, e falha se houver rota
+                       # sem summary, sem segurança declarada, ou rota interna vazada
+pnpm openapi:lint      # valida a especificação
+```

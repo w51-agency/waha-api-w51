@@ -27,6 +27,7 @@ export class CreateWebhookDto {
 
   @ApiPropertyOptional({
     description: 'Eventos que deseja receber. Use ["*"] para todos.',
+    type: [String],
     default: ['*'],
     example: ['message.received', 'session.connected'],
   })
@@ -52,7 +53,7 @@ export class UpdateWebhookDto {
   @MaxLength(2000)
   url?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
   @IsIn(EVENTOS_ACEITOS, { each: true })
@@ -75,18 +76,19 @@ export class WebhookResponse {
   @ApiProperty() url!: string;
   @ApiProperty({ type: [String] }) events!: string[];
   @ApiProperty() active!: boolean;
-  @ApiPropertyOptional({ nullable: true }) description!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) description!: string | null;
 
   @ApiProperty({ description: 'Falhas consecutivas. Zera a cada entrega bem-sucedida.' })
   consecutiveFailures!: number;
 
   @ApiPropertyOptional({
+    type: Date,
     nullable: true,
     description: 'Preenchido quando o endpoint foi desligado por falhas seguidas.',
   })
   disabledAt!: Date | null;
 
-  @ApiPropertyOptional({ nullable: true }) disabledReason!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) disabledReason!: string | null;
   @ApiProperty() createdAt!: Date;
 }
 
@@ -104,11 +106,11 @@ export class DeliveryResponse {
   @ApiProperty() eventType!: string;
   @ApiProperty() status!: string;
   @ApiProperty() attempts!: number;
-  @ApiPropertyOptional({ nullable: true }) responseStatus!: number | null;
-  @ApiPropertyOptional({ nullable: true }) responseBody!: string | null;
-  @ApiPropertyOptional({ nullable: true }) error!: string | null;
-  @ApiPropertyOptional({ nullable: true }) durationMs!: number | null;
-  @ApiPropertyOptional({ nullable: true }) nextRetryAt!: Date | null;
-  @ApiPropertyOptional({ nullable: true }) deliveredAt!: Date | null;
+  @ApiPropertyOptional({ type: Number, nullable: true }) responseStatus!: number | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) responseBody!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) error!: string | null;
+  @ApiPropertyOptional({ type: Number, nullable: true }) durationMs!: number | null;
+  @ApiPropertyOptional({ type: Date, nullable: true }) nextRetryAt!: Date | null;
+  @ApiPropertyOptional({ type: Date, nullable: true }) deliveredAt!: Date | null;
   @ApiProperty() createdAt!: Date;
 }

@@ -1,0 +1,5279 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/v1/me": {
+      "get": {
+        "description": "Confirma que a sua chave está válida e mostra a qual aplicação ela pertence, junto dos escopos que ela concede. Use este endpoint para testar a integração antes de qualquer outra chamada.",
+        "operationId": "account_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Dados da aplicação autenticada",
+        "tags": [
+          "Conta"
+        ]
+      }
+    },
+    "/v1/sessions": {
+      "post": {
+        "description": "Cria uma sessão e a inicia. O próximo passo é buscar o QR code em `GET /v1/sessions/{id}/qr` e escaneá-lo com o WhatsApp do celular. Assim que o número conectar, `phoneNumber` é preenchido automaticamente.",
+        "operationId": "sessions_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Criar uma sessão",
+        "tags": [
+          "Sessões"
+        ]
+      },
+      "get": {
+        "operationId": "sessions_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "STOPPED",
+                "STARTING",
+                "SCAN_QR_CODE",
+                "PASSKEY_REQUIRED",
+                "PASSKEY_CONFIRMATION_REQUIRED",
+                "WORKING",
+                "FAILED",
+                "UNKNOWN"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Busca por apelido ou número.",
+            "schema": {
+              "maxLength": 80,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SessionResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Listar suas sessões",
+        "tags": [
+          "Sessões"
+        ]
+      }
+    },
+    "/v1/sessions/{id}": {
+      "get": {
+        "description": "O status é conferido com o serviço de WhatsApp a cada consulta.",
+        "operationId": "sessions_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Detalhe da sessão",
+        "tags": [
+          "Sessões"
+        ]
+      },
+      "patch": {
+        "operationId": "sessions_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSessionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Editar apelido e metadados",
+        "tags": [
+          "Sessões"
+        ]
+      },
+      "delete": {
+        "description": "Remove a sessão do serviço de WhatsApp e do gateway.",
+        "operationId": "sessions_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Excluir a sessão",
+        "tags": [
+          "Sessões"
+        ]
+      }
+    },
+    "/v1/sessions/{id}/qr": {
+      "get": {
+        "description": "Devolve o conteúdo do QR e a mesma imagem em base64.\n\n**O QR do WhatsApp expira em cerca de 20 segundos.** Renove antes disso (o campo `expiresInSeconds` indica a janela), senão o usuário lê um código morto e conclui que algo quebrou.\n\nCada chamada é registrada: contamos quantas vezes o QR foi pedido, quando, e por qual chave — é assim que sabemos qual sistema conectou cada número.",
+        "operationId": "sessions_getQr",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QrCodeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A sessão não está aguardando leitura de QR (já conectada, parada ou falha).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Obter o QR code para conectar o número",
+        "tags": [
+          "Sessões"
+        ]
+      }
+    },
+    "/v1/sessions/{id}/qr.png": {
+      "get": {
+        "description": "A mesma informação de `/qr`, servida como imagem para uso direto em `<img>`.",
+        "operationId": "sessions_getQrPng",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "QR code como imagem PNG",
+        "tags": [
+          "Sessões"
+        ]
+      }
+    },
+    "/v1/sessions/{id}/pairing-code": {
+      "post": {
+        "description": "Alternativa ao QR: gera um código de 8 dígitos que o usuário digita no WhatsApp do celular, em Aparelhos conectados.",
+        "operationId": "sessions_requestPairingCode",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairingCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingCodeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Conectar por código de pareamento",
+        "tags": [
+          "Sessões"
+        ]
+      }
+    },
+    "/v1/sessions/{id}/start": {
+      "post": {
+        "description": "Idempotente.",
+        "operationId": "sessions_start",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Iniciar a sessão",
+        "tags": [
+          "Sessões"
+        ]
+      }
+    },
+    "/v1/sessions/{id}/stop": {
+      "post": {
+        "description": "Desconecta sem desfazer o pareamento — ao reiniciar, não pede QR de novo.",
+        "operationId": "sessions_stop",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Parar a sessão",
+        "tags": [
+          "Sessões"
+        ]
+      }
+    },
+    "/v1/sessions/{id}/restart": {
+      "post": {
+        "operationId": "sessions_restart",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Reiniciar a sessão",
+        "tags": [
+          "Sessões"
+        ]
+      }
+    },
+    "/v1/sessions/{id}/logout": {
+      "post": {
+        "description": "Desfaz o pareamento. O número precisará escanear o QR novamente para reconectar.",
+        "operationId": "sessions_logout",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Desconectar o número",
+        "tags": [
+          "Sessões"
+        ]
+      }
+    },
+    "/v1/messages/text": {
+      "post": {
+        "description": "O destinatário pode ser informado em `to` (número com código do país) ou `chatId` (formato do WhatsApp).",
+        "operationId": "messages_sendText",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Identificador seu para esta operação. Repetir a requisição com a mesma chave devolve o resultado original em vez de enviar de novo — é a forma segura de ter retry sem duplicar a mensagem no aparelho do destinatário. Validade: 24 horas.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendTextDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A sessão não está conectada, ou o destinatário/arquivo é inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Enviar texto",
+        "tags": [
+          "Mensagens"
+        ]
+      }
+    },
+    "/v1/messages/image": {
+      "post": {
+        "description": "O arquivo pode vir por `url`, `base64` ou upload multipart no campo `file` — exatamente uma dessas formas. URLs apontando para endereços internos são recusadas por segurança.",
+        "operationId": "messages_sendImage",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Identificador seu para esta operação. Repetir a requisição com a mesma chave devolve o resultado original em vez de enviar de novo — é a forma segura de ter retry sem duplicar a mensagem no aparelho do destinatário. Validade: 24 horas.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMediaDto"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A sessão não está conectada, ou o destinatário/arquivo é inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Enviar imagem",
+        "tags": [
+          "Mensagens"
+        ]
+      }
+    },
+    "/v1/messages/file": {
+      "post": {
+        "operationId": "messages_sendFile",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Identificador seu para esta operação. Repetir a requisição com a mesma chave devolve o resultado original em vez de enviar de novo — é a forma segura de ter retry sem duplicar a mensagem no aparelho do destinatário. Validade: 24 horas.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMediaDto"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A sessão não está conectada, ou o destinatário/arquivo é inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Enviar documento",
+        "tags": [
+          "Mensagens"
+        ]
+      }
+    },
+    "/v1/messages/voice": {
+      "post": {
+        "description": "O WhatsApp espera OGG/Opus. Use `convert: true` para converter automaticamente a partir de outros formatos.",
+        "operationId": "messages_sendVoice",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Identificador seu para esta operação. Repetir a requisição com a mesma chave devolve o resultado original em vez de enviar de novo — é a forma segura de ter retry sem duplicar a mensagem no aparelho do destinatário. Validade: 24 horas.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMediaDto"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A sessão não está conectada, ou o destinatário/arquivo é inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Enviar áudio",
+        "tags": [
+          "Mensagens"
+        ]
+      }
+    },
+    "/v1/messages/video": {
+      "post": {
+        "operationId": "messages_sendVideo",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Identificador seu para esta operação. Repetir a requisição com a mesma chave devolve o resultado original em vez de enviar de novo — é a forma segura de ter retry sem duplicar a mensagem no aparelho do destinatário. Validade: 24 horas.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMediaDto"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A sessão não está conectada, ou o destinatário/arquivo é inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Enviar vídeo",
+        "tags": [
+          "Mensagens"
+        ]
+      }
+    },
+    "/v1/messages/location": {
+      "post": {
+        "operationId": "messages_sendLocation",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Identificador seu para esta operação. Repetir a requisição com a mesma chave devolve o resultado original em vez de enviar de novo — é a forma segura de ter retry sem duplicar a mensagem no aparelho do destinatário. Validade: 24 horas.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendLocationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A sessão não está conectada, ou o destinatário/arquivo é inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Enviar localização",
+        "tags": [
+          "Mensagens"
+        ]
+      }
+    },
+    "/v1/messages/contact": {
+      "post": {
+        "operationId": "messages_sendContact",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Identificador seu para esta operação. Repetir a requisição com a mesma chave devolve o resultado original em vez de enviar de novo — é a forma segura de ter retry sem duplicar a mensagem no aparelho do destinatário. Validade: 24 horas.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendResultDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A sessão não está conectada, ou o destinatário/arquivo é inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Enviar contato",
+        "tags": [
+          "Mensagens"
+        ]
+      }
+    },
+    "/v1/messages/reaction": {
+      "post": {
+        "description": "Emoji vazio remove a reação.",
+        "operationId": "messages_sendReaction",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendReactionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A sessão não está conectada, ou o destinatário/arquivo é inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Reagir a uma mensagem",
+        "tags": [
+          "Mensagens"
+        ]
+      }
+    },
+    "/v1/messages/seen": {
+      "post": {
+        "operationId": "messages_sendSeen",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendSeenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A sessão não está conectada, ou o destinatário/arquivo é inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Marcar como lida",
+        "tags": [
+          "Mensagens"
+        ]
+      }
+    },
+    "/v1/messages/typing": {
+      "post": {
+        "description": "Mostra \"digitando...\" no aparelho do destinatário.",
+        "operationId": "messages_setTyping",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TypingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A sessão não existe ou pertence a outra aplicação.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A sessão não está conectada, ou o destinatário/arquivo é inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Indicar digitação",
+        "tags": [
+          "Mensagens"
+        ]
+      }
+    },
+    "/v1/messages": {
+      "get": {
+        "description": "Lista as mensagens que passaram por este gateway, das mais recentes para as mais antigas.\n\n**Paginação por cursor.** Use o `nextCursor` da resposta em `?cursor=` para buscar a página seguinte. Diferente de offset, o cursor não repete nem pula registros quando chegam mensagens novas durante a navegação. Quando `nextCursor` vier nulo, acabou.",
+        "operationId": "messagesHistory_list",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por sessão.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chatId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por conversa.",
+            "schema": {
+              "example": "5511999999999@c.us",
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "INBOUND = recebidas, OUTBOUND = enviadas.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INBOUND",
+                "OUTBOUND"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "QUEUED",
+                "SENT",
+                "DELIVERED",
+                "READ",
+                "FAILED"
+              ]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "text, image, video, audio, document…",
+            "schema": {
+              "maxLength": 40,
+              "example": "text",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Início do período (ISO 8601).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Fim do período (ISO 8601).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Busca no conteúdo da mensagem.",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "O `nextCursor` da página anterior.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedMessages"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Consultar o histórico",
+        "tags": [
+          "Mensagens"
+        ]
+      }
+    },
+    "/v1/messages/export": {
+      "get": {
+        "description": "Aceita os mesmos filtros da listagem. A resposta é transmitida em fluxo.",
+        "operationId": "messagesHistory_export",
+        "parameters": [
+          {
+            "name": "sessionId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por sessão.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chatId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por conversa.",
+            "schema": {
+              "example": "5511999999999@c.us",
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "description": "INBOUND = recebidas, OUTBOUND = enviadas.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INBOUND",
+                "OUTBOUND"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "QUEUED",
+                "SENT",
+                "DELIVERED",
+                "READ",
+                "FAILED"
+              ]
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "text, image, video, audio, document…",
+            "schema": {
+              "maxLength": 40,
+              "example": "text",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Início do período (ISO 8601).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Fim do período (ISO 8601).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Busca no conteúdo da mensagem.",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "O `nextCursor` da página anterior.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Exportar o histórico em CSV",
+        "tags": [
+          "Mensagens"
+        ]
+      }
+    },
+    "/v1/messages/{id}": {
+      "get": {
+        "operationId": "messagesHistory_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeRaw",
+            "required": false,
+            "in": "query",
+            "description": "Incluir o payload cru do serviço de WhatsApp — útil para depuração.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Detalhe de uma mensagem",
+        "tags": [
+          "Mensagens"
+        ]
+      }
+    },
+    "/v1/sessions/{id}/chats": {
+      "get": {
+        "description": "Lê as conversas direto do dispositivo conectado — inclui conversas anteriores à conexão. Diferente de `GET /v1/messages`, que traz apenas o que passou por este gateway. Exige a sessão conectada.",
+        "operationId": "chats_listChats",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChatResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Listar conversas do aparelho",
+        "tags": [
+          "Chats & Contatos"
+        ]
+      }
+    },
+    "/v1/sessions/{id}/chats/{chatId}/messages": {
+      "get": {
+        "operationId": "chats_listChatMessages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chatId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MessageResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Mensagens de uma conversa, lidas do aparelho",
+        "tags": [
+          "Chats & Contatos"
+        ]
+      }
+    },
+    "/v1/sessions/{id}/contacts/check": {
+      "get": {
+        "description": "Consulte antes de enviar, para não registrar falhas evitáveis.",
+        "operationId": "chats_checkNumber",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "phone",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "5511999999999",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NumberCheckResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Verificar se um número tem WhatsApp",
+        "tags": [
+          "Chats & Contatos"
+        ]
+      }
+    },
+    "/v1/media/{messageId}": {
+      "get": {
+        "description": "Serve o arquivo autenticando pela sua API key. O serviço de WhatsApp nunca é exposto diretamente — este endpoint é o único caminho para os arquivos.\n\nArquivos ficam disponíveis por tempo limitado após o recebimento.",
+        "operationId": "media_download",
+        "parameters": [
+          {
+            "name": "messageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Mensagem inexistente, sem mídia, ou mídia já expirada.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Baixar a mídia de uma mensagem",
+        "tags": [
+          "Mídia"
+        ]
+      }
+    },
+    "/v1/sessions/{id}/events": {
+      "get": {
+        "description": "Fluxo Server-Sent Events com as mudanças de estado e as mensagens da sessão. Útil para saber o instante em que o QR foi lido, sem ficar consultando.",
+        "operationId": "sessionEvents_events",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Acompanhar uma sessão em tempo real",
+        "tags": [
+          "Sessões"
+        ]
+      }
+    },
+    "/v1/webhook-endpoints": {
+      "post": {
+        "description": "Registre a URL do seu sistema para receber eventos das **suas** sessões.\n\nCada entrega leva o header `X-Gateway-Signature: t=<unix>,v1=<hmac>`, onde o HMAC-SHA256 cobre `\"{t}.{corpo}\"` — o timestamp entra no que é assinado justamente para que você possa recusar entregas antigas.\n\nResponda 2xx rapidamente e processe de forma assíncrona: entregas que demoram mais que o tempo limite são retentadas.",
+        "operationId": "webhooksOut_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWebhookDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedWebhookResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Cadastrar um endpoint",
+        "tags": [
+          "Webhooks"
+        ]
+      },
+      "get": {
+        "operationId": "webhooksOut_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebhookResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Listar seus endpoints",
+        "tags": [
+          "Webhooks"
+        ]
+      }
+    },
+    "/v1/webhook-endpoints/{id}": {
+      "get": {
+        "operationId": "webhooksOut_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Detalhe de um endpoint",
+        "tags": [
+          "Webhooks"
+        ]
+      },
+      "patch": {
+        "description": "Enviar `active: true` reativa um endpoint que foi desligado automaticamente por falhas seguidas, zerando o contador.",
+        "operationId": "webhooksOut_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWebhookDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Editar um endpoint",
+        "tags": [
+          "Webhooks"
+        ]
+      },
+      "delete": {
+        "operationId": "webhooksOut_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Remover um endpoint",
+        "tags": [
+          "Webhooks"
+        ]
+      }
+    },
+    "/v1/webhook-endpoints/{id}/rotate-secret": {
+      "post": {
+        "description": "O segredo anterior deixa de valer imediatamente.",
+        "operationId": "webhooksOut_rotateSecret",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedWebhookResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Trocar o segredo de assinatura",
+        "tags": [
+          "Webhooks"
+        ]
+      }
+    },
+    "/v1/webhook-endpoints/{id}/test": {
+      "post": {
+        "description": "Dispara um evento `ping` para conferir a configuração do seu endpoint.",
+        "operationId": "webhooksOut_test",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Enviar um evento de teste",
+        "tags": [
+          "Webhooks"
+        ]
+      }
+    },
+    "/v1/webhook-endpoints/{id}/deliveries": {
+      "get": {
+        "description": "Cada tentativa é registrada, com código HTTP, duração e erro.",
+        "operationId": "webhooksOut_deliveries",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "FAILED",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeliveryResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Histórico de entregas",
+        "tags": [
+          "Webhooks"
+        ]
+      }
+    },
+    "/v1/webhook-deliveries/{id}/retry": {
+      "post": {
+        "operationId": "webhookDeliveries_retry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Credencial ausente, inválida ou revogada.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A chave não possui o escopo necessário para esta operação.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos. O campo `errors` detalha por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições excedido. Veja o header `Retry-After`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno. Informe o `requestId` ao acionar o suporte.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "summary": "Reenviar uma entrega",
+        "tags": [
+          "Webhooks"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "WhatsApp Gateway W51",
+    "description": "Gateway de WhatsApp multi-sistema. Conecte números, envie e receba mensagens, e\nacompanhe tudo pelo painel.\n\n## Começando\n\n1. Peça uma **API key** ao administrador do gateway.\n2. Confirme que ela funciona: `GET /v1/me`.\n3. Crie uma sessão: `POST /v1/sessions`.\n4. Busque o QR code: `GET /v1/sessions/{id}/qr` e escaneie com o WhatsApp.\n5. Quando `status` virar `WORKING`, envie: `POST /v1/messages/text`.\n\nO guia completo, com exemplos em curl, Node e PHP, está em `docs/integracao.md`.\n\n## Autenticação\n\nEnvie sua chave no header:\n\n```\nX-API-Key: wgw_live_a1b2c3d4e5f6_seu-segredo\n```\n\nO header `Authorization: Bearer <chave>` também é aceito, para clientes que só\nsabem mandar credencial dessa forma.\n\n### Isolamento\n\nA chave identifica a sua aplicação. Você enxerga e opera **apenas** as sessões\nque a sua própria aplicação criou. Sessões de outros sistemas respondem **404**,\nnão 403 — não confirmamos sequer que o id existe.\n\n## Erros\n\nToda resposta de erro segue **RFC 7807** (`application/problem+json`):\n\n```json\n{\n  \"type\": \"https://gateway.w51/errors/session-not-working\",\n  \"title\": \"Sessão não conectada\",\n  \"status\": 409,\n  \"detail\": \"A sessão ainda não foi conectada. Escaneie o QR code em GET /v1/sessions/{id}/qr.\",\n  \"instance\": \"/v1/messages/text\",\n  \"requestId\": \"01JCQ8Z5X9K2M4N6P8R0T2V4W6\"\n}\n```\n\nO `type` é estável e legível por máquina — use-o para tratar casos específicos.\nO `detail` é a explicação em português. **Guarde o `requestId`**: é por ele que\nlocalizamos o log da sua requisição.\n\n## Repetição segura de envios\n\nEnvios **não são retentados automaticamente** por nós: um tempo esgotado pode\nsignificar \"entregue, resposta perdida\", e repetir duplicaria a mensagem no\naparelho do destinatário.\n\nPara ter retry seguro, mande o header `Idempotency-Key` com um identificador\nseu. Repetir a requisição com a mesma chave devolve o resultado original em vez\nde enviar de novo. Vale por 24 horas.\n\n## Limite de requisições\n\nCada chave tem um limite próprio. As respostas trazem `X-RateLimit-Limit`,\n`X-RateLimit-Remaining` e, ao estourar, `Retry-After` com os segundos de espera.\n\n## Paginação\n\nAs listagens usam **cursor**, não offset. Passe o `nextCursor` da resposta em\n`?cursor=` para a próxima página; quando vier `null`, acabou. Cursor não repete\nnem pula registros quando chegam mensagens durante a navegação.",
+    "version": "1.0",
+    "contact": {},
+    "license": {
+      "name": "Proprietário",
+      "url": ""
+    }
+  },
+  "tags": [
+    {
+      "name": "Conta",
+      "description": "Confirme sua credencial e veja o que ela permite."
+    },
+    {
+      "name": "Sessões",
+      "description": "Conectar números de WhatsApp e acompanhar o estado da conexão. Cada sessão é um número; o QR code é como ele se conecta."
+    },
+    {
+      "name": "Mensagens",
+      "description": "Enviar mensagens de todos os tipos e consultar o histórico do que passou por aqui."
+    },
+    {
+      "name": "Chats & Contatos",
+      "description": "Ler conversas direto do aparelho conectado — inclui histórico anterior à conexão — e verificar se um número tem WhatsApp."
+    },
+    {
+      "name": "Mídia",
+      "description": "Baixar arquivos enviados e recebidos."
+    },
+    {
+      "name": "Webhooks",
+      "description": "Receber eventos no seu sistema, sem precisar consultar."
+    }
+  ],
+  "servers": [
+    {
+      "url": "http://localhost:3001",
+      "description": "Desenvolvimento"
+    },
+    {
+      "url": "https://{host}",
+      "description": "Produção",
+      "variables": {
+        "host": {
+          "default": "gateway.seu-dominio.com",
+          "description": "Domínio da sua instalação."
+        }
+      }
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Chave da sua aplicação, emitida no painel administrativo."
+      }
+    },
+    "schemas": {
+      "ApplicationSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "clx1a2b3c4d5e6f7g8h9"
+          },
+          "name": {
+            "type": "string",
+            "example": "CRM Vendas"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Identificador curto da aplicação. Compõe o nome interno das suas sessões.",
+            "example": "crm-vendas"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ]
+      },
+      "ApiKeySummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "clx9h8g7f6e5d4c3b2a1"
+          },
+          "name": {
+            "type": "string",
+            "example": "produção"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "Parte pública da chave. O segredo não é recuperável.",
+            "example": "wgw_live_a1b2c3d4e5f6"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "prefix"
+        ]
+      },
+      "ScopeInfo": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "example": "messages:send"
+          },
+          "description": {
+            "type": "string",
+            "example": "Enviar mensagens"
+          }
+        },
+        "required": [
+          "scope",
+          "description"
+        ]
+      },
+      "AccountResponse": {
+        "type": "object",
+        "properties": {
+          "application": {
+            "$ref": "#/components/schemas/ApplicationSummary"
+          },
+          "apiKey": {
+            "$ref": "#/components/schemas/ApiKeySummary"
+          },
+          "scopes": {
+            "description": "O que esta chave pode fazer.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScopeInfo"
+            }
+          }
+        },
+        "required": [
+          "application",
+          "apiKey",
+          "scopes"
+        ]
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Identificador estável do tipo de erro, no padrão recurso/motivo.",
+            "example": "https://gateway.w51/errors/session-not-found"
+          },
+          "title": {
+            "type": "string",
+            "description": "Resumo curto do erro.",
+            "example": "Sessão não encontrada"
+          },
+          "status": {
+            "type": "number",
+            "description": "Código HTTP.",
+            "example": 404
+          },
+          "detail": {
+            "type": "string",
+            "description": "Explicação em português, voltada a quem vai corrigir o problema.",
+            "example": "Nenhuma sessão com o id informado pertence à sua aplicação."
+          },
+          "instance": {
+            "type": "string",
+            "description": "Caminho que originou o erro.",
+            "example": "/v1/sessions/abc123"
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Id da requisição — informe-o ao pedir suporte, é por ele que achamos o log.",
+            "example": "01JCQ8Z5X9K2M4N6P8R0T2V4W6"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Erros de validação por campo, quando houver.",
+            "example": {
+              "chatId": [
+                "Número precisa incluir o código do país."
+              ]
+            }
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "instance",
+          "requestId"
+        ]
+      },
+      "CreateSessionDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "Apelido para você identificar este número. Único dentro da sua aplicação. O nome técnico da sessão é gerado por nós.",
+            "example": "Comercial"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Dados livres seus, devolvidos nas consultas e nos webhooks.",
+            "example": {
+              "setor": "vendas",
+              "responsavel": "time-1"
+            }
+          }
+        }
+      },
+      "SessionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "clx1a2b3c4d5e6f7g8h9"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "example": "Comercial"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "STOPPED",
+              "STARTING",
+              "SCAN_QR_CODE",
+              "PASSKEY_REQUIRED",
+              "PASSKEY_CONFIRMATION_REQUIRED",
+              "WORKING",
+              "FAILED",
+              "UNKNOWN"
+            ],
+            "description": "SCAN_QR_CODE = aguardando leitura do QR · WORKING = conectado e pronto para enviar."
+          },
+          "statusLabel": {
+            "type": "string",
+            "example": "Conectado",
+            "description": "Status em português."
+          },
+          "phoneNumber": {
+            "type": "string",
+            "nullable": true,
+            "description": "Preenchido quando o número conecta.",
+            "example": "5511999999999"
+          },
+          "pushName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Comercial da Empresa"
+          },
+          "engine": {
+            "type": "string",
+            "example": "NOWEB"
+          },
+          "qrRequestCount": {
+            "type": "number",
+            "description": "Quantas vezes o QR code desta sessão foi solicitado.",
+            "example": 2
+          },
+          "lastQrRequestedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "connectedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Quando o número foi conectado."
+          },
+          "disconnectedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "metadata": {
+            "type": "object",
+            "nullable": true,
+            "description": "Seus dados livres."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "statusLabel",
+          "engine",
+          "qrRequestCount",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateSessionDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "example": "Comercial SP"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "QrCodeResponse": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "Conteúdo do QR code. Renderize como QR ou use a imagem PNG.",
+            "example": "https://wa.me/settings/linked_devices#2@ABC..."
+          },
+          "imageBase64": {
+            "type": "string",
+            "description": "A mesma imagem em PNG, codificada em base64 (pronta para uma tag <img>)."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "STOPPED",
+              "STARTING",
+              "SCAN_QR_CODE",
+              "PASSKEY_REQUIRED",
+              "PASSKEY_CONFIRMATION_REQUIRED",
+              "WORKING",
+              "FAILED",
+              "UNKNOWN"
+            ]
+          },
+          "expiresInSeconds": {
+            "type": "number",
+            "description": "Segundos até este QR expirar. O WhatsApp renova o código com frequência: busque um novo antes de expirar, senão o usuário lê um código morto.",
+            "example": 20
+          }
+        },
+        "required": [
+          "value",
+          "imageBase64",
+          "status",
+          "expiresInSeconds"
+        ]
+      },
+      "PairingCodeDto": {
+        "type": "object",
+        "properties": {
+          "phoneNumber": {
+            "type": "string",
+            "pattern": "^\\d{10,15}$",
+            "description": "Número com código do país, somente dígitos.",
+            "example": "5511999999999"
+          }
+        },
+        "required": [
+          "phoneNumber"
+        ]
+      },
+      "PairingCodeResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "ABCD-EFGH",
+            "description": "Digite este código no WhatsApp do celular."
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "SendTextDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Id da sessão que enviará a mensagem."
+          },
+          "to": {
+            "type": "string",
+            "description": "Destinatário. Aceita o número com código do país (`5511999999999`), formatado (`+55 11 99999-9999`) ou o chatId completo (`...@c.us`, `...@g.us`). Use `to` **ou** `chatId` — são equivalentes.",
+            "example": "5511999999999"
+          },
+          "chatId": {
+            "type": "string",
+            "description": "Alternativa a `to`.",
+            "example": "5511999999999@c.us"
+          },
+          "replyTo": {
+            "type": "string",
+            "description": "Id da mensagem que está sendo respondida."
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 65536,
+            "example": "Olá! Seu pedido foi confirmado."
+          },
+          "linkPreview": {
+            "type": "boolean",
+            "description": "Gerar prévia do primeiro link. Padrão: true."
+          },
+          "mentions": {
+            "description": "Menções, em chatId. Em grupos, notifica os participantes citados.",
+            "example": [
+              "5511999999999@c.us"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "sessionId",
+          "text"
+        ]
+      },
+      "SendResultDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id da mensagem no gateway. Use-o para consultar o status."
+          },
+          "wahaId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Id da mensagem no WhatsApp."
+          },
+          "status": {
+            "type": "string",
+            "example": "SENT"
+          },
+          "chatId": {
+            "type": "string",
+            "example": "5511999999999@c.us"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Motivo, quando o envio falha."
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "chatId",
+          "timestamp"
+        ]
+      },
+      "SendMediaDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Id da sessão que enviará a mensagem."
+          },
+          "to": {
+            "type": "string",
+            "description": "Destinatário. Aceita o número com código do país (`5511999999999`), formatado (`+55 11 99999-9999`) ou o chatId completo (`...@c.us`, `...@g.us`). Use `to` **ou** `chatId` — são equivalentes.",
+            "example": "5511999999999"
+          },
+          "chatId": {
+            "type": "string",
+            "description": "Alternativa a `to`.",
+            "example": "5511999999999@c.us"
+          },
+          "replyTo": {
+            "type": "string",
+            "description": "Id da mensagem que está sendo respondida."
+          },
+          "url": {
+            "type": "string",
+            "description": "URL pública do arquivo. Endereços internos são recusados por segurança.",
+            "example": "https://exemplo.com/imagem.jpg"
+          },
+          "base64": {
+            "type": "string",
+            "description": "Conteúdo do arquivo em base64."
+          },
+          "mimetype": {
+            "type": "string",
+            "description": "Obrigatório quando usar `base64`.",
+            "example": "image/jpeg"
+          },
+          "filename": {
+            "type": "string",
+            "maxLength": 255,
+            "example": "comprovante.pdf"
+          },
+          "caption": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "Legenda (imagem, vídeo e documento)."
+          },
+          "convert": {
+            "type": "boolean",
+            "description": "Converter o arquivo para o formato que o WhatsApp aceita. Útil para áudio e vídeo fora do padrão."
+          },
+          "asNote": {
+            "type": "boolean",
+            "description": "Enviar vídeo como nota (círculo)."
+          }
+        },
+        "required": [
+          "sessionId"
+        ]
+      },
+      "SendLocationDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Id da sessão que enviará a mensagem."
+          },
+          "to": {
+            "type": "string",
+            "description": "Destinatário. Aceita o número com código do país (`5511999999999`), formatado (`+55 11 99999-9999`) ou o chatId completo (`...@c.us`, `...@g.us`). Use `to` **ou** `chatId` — são equivalentes.",
+            "example": "5511999999999"
+          },
+          "chatId": {
+            "type": "string",
+            "description": "Alternativa a `to`.",
+            "example": "5511999999999@c.us"
+          },
+          "replyTo": {
+            "type": "string",
+            "description": "Id da mensagem que está sendo respondida."
+          },
+          "latitude": {
+            "type": "number",
+            "example": -23.5505
+          },
+          "longitude": {
+            "type": "number",
+            "example": -46.6333
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "Escritório"
+          }
+        },
+        "required": [
+          "sessionId",
+          "latitude",
+          "longitude"
+        ]
+      },
+      "SendContactDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Id da sessão que enviará a mensagem."
+          },
+          "to": {
+            "type": "string",
+            "description": "Destinatário. Aceita o número com código do país (`5511999999999`), formatado (`+55 11 99999-9999`) ou o chatId completo (`...@c.us`, `...@g.us`). Use `to` **ou** `chatId` — são equivalentes.",
+            "example": "5511999999999"
+          },
+          "chatId": {
+            "type": "string",
+            "description": "Alternativa a `to`.",
+            "example": "5511999999999@c.us"
+          },
+          "replyTo": {
+            "type": "string",
+            "description": "Id da mensagem que está sendo respondida."
+          },
+          "fullName": {
+            "type": "string",
+            "minLength": 1,
+            "example": "Maria Silva"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "minLength": 8,
+            "example": "5511988887777"
+          }
+        },
+        "required": [
+          "sessionId",
+          "fullName",
+          "phoneNumber"
+        ]
+      },
+      "SendReactionDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "messageId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Id da mensagem a reagir."
+          },
+          "emoji": {
+            "type": "string",
+            "maxLength": 8,
+            "description": "Emoji da reação. String vazia remove.",
+            "example": "👍"
+          }
+        },
+        "required": [
+          "sessionId",
+          "messageId",
+          "emoji"
+        ]
+      },
+      "SendSeenDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Id da sessão que enviará a mensagem."
+          },
+          "to": {
+            "type": "string",
+            "description": "Destinatário. Aceita o número com código do país (`5511999999999`), formatado (`+55 11 99999-9999`) ou o chatId completo (`...@c.us`, `...@g.us`). Use `to` **ou** `chatId` — são equivalentes.",
+            "example": "5511999999999"
+          },
+          "chatId": {
+            "type": "string",
+            "description": "Alternativa a `to`.",
+            "example": "5511999999999@c.us"
+          },
+          "replyTo": {
+            "type": "string",
+            "description": "Id da mensagem que está sendo respondida."
+          },
+          "messageIds": {
+            "description": "Mensagens a marcar como lidas.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "sessionId"
+        ]
+      },
+      "TypingDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Id da sessão que enviará a mensagem."
+          },
+          "to": {
+            "type": "string",
+            "description": "Destinatário. Aceita o número com código do país (`5511999999999`), formatado (`+55 11 99999-9999`) ou o chatId completo (`...@c.us`, `...@g.us`). Use `to` **ou** `chatId` — são equivalentes.",
+            "example": "5511999999999"
+          },
+          "chatId": {
+            "type": "string",
+            "description": "Alternativa a `to`.",
+            "example": "5511999999999@c.us"
+          },
+          "replyTo": {
+            "type": "string",
+            "description": "Id da mensagem que está sendo respondida."
+          },
+          "action": {
+            "enum": [
+              "start",
+              "stop"
+            ],
+            "type": "string",
+            "example": "start"
+          }
+        },
+        "required": [
+          "sessionId",
+          "action"
+        ]
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "wahaId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Id da mensagem no WhatsApp."
+          },
+          "sessionId": {
+            "type": "string"
+          },
+          "sessionLabel": {
+            "type": "string",
+            "nullable": true,
+            "description": "Apelido da sessão."
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "INBOUND",
+              "OUTBOUND"
+            ]
+          },
+          "chatId": {
+            "type": "string",
+            "example": "5511999999999@c.us"
+          },
+          "phone": {
+            "type": "string",
+            "example": "5511999999999",
+            "description": "O número, sem o sufixo do WhatsApp."
+          },
+          "type": {
+            "type": "string",
+            "example": "text"
+          },
+          "body": {
+            "type": "string",
+            "nullable": true
+          },
+          "mediaUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "URL para baixar a mídia por este gateway. Requer a sua API key — o serviço de WhatsApp nunca é exposto diretamente.",
+            "example": "/v1/media/clx1a2b3c4d5"
+          },
+          "mediaMimeType": {
+            "type": "string",
+            "nullable": true
+          },
+          "mediaSize": {
+            "type": "number",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "SENT",
+              "DELIVERED",
+              "READ",
+              "FAILED"
+            ]
+          },
+          "ack": {
+            "type": "number",
+            "nullable": true,
+            "description": "Confirmação do WhatsApp."
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Motivo, quando falhou."
+          },
+          "sentByApiKeyId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Chave que enviou (só para enviadas)."
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "raw": {
+            "type": "object",
+            "description": "Payload cru, apenas quando `includeRaw=true`."
+          }
+        },
+        "required": [
+          "id",
+          "sessionId",
+          "direction",
+          "chatId",
+          "phone",
+          "type",
+          "status",
+          "timestamp"
+        ]
+      },
+      "PaginatedMessages": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageResponse"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Passe em `?cursor=` para a próxima página. Nulo na última."
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "Se há mais registros além desta página."
+          }
+        },
+        "required": [
+          "data",
+          "hasMore"
+        ]
+      },
+      "ChatResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "5511999999999@c.us"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastMessageAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Última atividade na conversa."
+          },
+          "unreadCount": {
+            "type": "number",
+            "description": "Mensagens não lidas."
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "NumberCheckResponse": {
+        "type": "object",
+        "properties": {
+          "exists": {
+            "type": "boolean",
+            "description": "Se o número possui WhatsApp."
+          },
+          "chatId": {
+            "type": "string",
+            "nullable": true,
+            "description": "chatId para enviar mensagens."
+          }
+        },
+        "required": [
+          "exists"
+        ]
+      },
+      "CreateWebhookDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 2000,
+            "description": "URL do seu sistema que receberá os eventos. Deve responder 2xx rapidamente — processe de forma assíncrona do seu lado.",
+            "example": "https://seu-sistema.com/webhooks/whatsapp"
+          },
+          "events": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "message.received",
+                "message.sent",
+                "message.ack",
+                "session.status",
+                "session.connected",
+                "session.disconnected",
+                "ping",
+                "*"
+              ]
+            },
+            "description": "Eventos que deseja receber. Use [\"*\"] para todos.",
+            "default": [
+              "*"
+            ],
+            "example": [
+              "message.received",
+              "session.connected"
+            ],
+            "type": "array"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "Integração com o CRM"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "CreatedWebhookResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "consecutiveFailures": {
+            "type": "number",
+            "description": "Falhas consecutivas. Zera a cada entrega bem-sucedida."
+          },
+          "disabledAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Preenchido quando o endpoint foi desligado por falhas seguidas."
+          },
+          "disabledReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "secret": {
+            "type": "string",
+            "description": "Segredo para verificar a assinatura das entregas. **Exibido uma única vez.**"
+          },
+          "warning": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "events",
+          "active",
+          "consecutiveFailures",
+          "createdAt",
+          "secret",
+          "warning"
+        ]
+      },
+      "WebhookResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "consecutiveFailures": {
+            "type": "number",
+            "description": "Falhas consecutivas. Zera a cada entrega bem-sucedida."
+          },
+          "disabledAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Preenchido quando o endpoint foi desligado por falhas seguidas."
+          },
+          "disabledReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "events",
+          "active",
+          "consecutiveFailures",
+          "createdAt"
+        ]
+      },
+      "UpdateWebhookDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "events": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "message.received",
+                "message.sent",
+                "message.ack",
+                "session.status",
+                "session.connected",
+                "session.disconnected",
+                "ping",
+                "*"
+              ]
+            },
+            "type": "array"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Reativar um endpoint desligado automaticamente."
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      },
+      "DeliveryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "attempts": {
+            "type": "number"
+          },
+          "responseStatus": {
+            "type": "number",
+            "nullable": true
+          },
+          "responseBody": {
+            "type": "string",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMs": {
+            "type": "number",
+            "nullable": true
+          },
+          "nextRetryAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "deliveredAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "eventType",
+          "status",
+          "attempts",
+          "createdAt"
+        ]
+      }
+    }
+  }
+}

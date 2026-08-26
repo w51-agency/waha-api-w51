@@ -4,6 +4,7 @@ import {
   ApiExcludeEndpoint,
   ApiOperation,
   ApiQuery,
+  ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
@@ -205,6 +206,7 @@ export class MetricsController {
 }
 
 @ApiTags('Sessões')
+@ApiSecurity('ApiKeyAuth')
 @Controller('v1/sessions')
 export class SessionEventsController {
   constructor(private readonly bus: EventsBus) {}

@@ -1,0 +1,822 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_source": "waha-gateway-w51",
+  "resources": [
+    {
+      "_id": "wrk_gateway",
+      "_type": "workspace",
+      "name": "WhatsApp Gateway W51",
+      "description": "API pública do gateway. Configure baseUrl e apiKey no ambiente."
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_gateway",
+      "name": "Base",
+      "data": {
+        "baseUrl": "http://localhost:3001",
+        "apiKey": "wgw_live_troque_por_sua_chave",
+        "sessionId": "",
+        "messageId": "",
+        "endpointId": ""
+      }
+    },
+    {
+      "_id": "fld_conta",
+      "_type": "request_group",
+      "parentId": "wrk_gateway",
+      "name": "Conta"
+    },
+    {
+      "_id": "fld_sess_es",
+      "_type": "request_group",
+      "parentId": "wrk_gateway",
+      "name": "Sessões"
+    },
+    {
+      "_id": "fld_mensagens",
+      "_type": "request_group",
+      "parentId": "wrk_gateway",
+      "name": "Mensagens"
+    },
+    {
+      "_id": "fld_chats___contatos",
+      "_type": "request_group",
+      "parentId": "wrk_gateway",
+      "name": "Chats & Contatos"
+    },
+    {
+      "_id": "fld_m_dia",
+      "_type": "request_group",
+      "parentId": "wrk_gateway",
+      "name": "Mídia"
+    },
+    {
+      "_id": "fld_webhooks",
+      "_type": "request_group",
+      "parentId": "wrk_gateway",
+      "name": "Webhooks"
+    },
+    {
+      "_id": "req_1",
+      "_type": "request",
+      "parentId": "fld_conta",
+      "name": "Dados da aplicação autenticada",
+      "description": "Confirma que a sua chave está válida e mostra a qual aplicação ela pertence, junto dos escopos que ela concede. Use este endpoint para testar a integração antes de qualquer outra chamada.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/me",
+      "metaSortKey": 1,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_2",
+      "_type": "request",
+      "parentId": "fld_sess_es",
+      "name": "Criar uma sessão",
+      "description": "Cria uma sessão e a inicia. O próximo passo é buscar o QR code em `GET /v1/sessions/{id}/qr` e escaneá-lo com o WhatsApp do celular. Assim que o número conectar, `phoneNumber` é preenchido automaticamente.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/sessions",
+      "metaSortKey": 2,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_3",
+      "_type": "request",
+      "parentId": "fld_sess_es",
+      "name": "Listar suas sessões",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/sessions",
+      "metaSortKey": 3,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_4",
+      "_type": "request",
+      "parentId": "fld_sess_es",
+      "name": "Detalhe da sessão",
+      "description": "O status é conferido com o serviço de WhatsApp a cada consulta.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/sessions/{{ _.id }}",
+      "metaSortKey": 4,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_5",
+      "_type": "request",
+      "parentId": "fld_sess_es",
+      "name": "Editar apelido e metadados",
+      "description": "",
+      "method": "PATCH",
+      "url": "{{ _.baseUrl }}/v1/sessions/{{ _.id }}",
+      "metaSortKey": 5,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_6",
+      "_type": "request",
+      "parentId": "fld_sess_es",
+      "name": "Excluir a sessão",
+      "description": "Remove a sessão do serviço de WhatsApp e do gateway.",
+      "method": "DELETE",
+      "url": "{{ _.baseUrl }}/v1/sessions/{{ _.id }}",
+      "metaSortKey": 6,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_7",
+      "_type": "request",
+      "parentId": "fld_sess_es",
+      "name": "Obter o QR code para conectar o número",
+      "description": "Devolve o conteúdo do QR e a mesma imagem em base64.\n\n**O QR do WhatsApp expira em cerca de 20 segundos.** Renove antes disso (o campo `expiresInSeconds` indica a janela), senão o usuário lê um código morto e conclui que algo quebrou.\n\nCada chamada é registrada: contamos quantas vezes o QR foi pedido, quando, e por qual chave — é assim que sabemos qual sistema conectou cada número.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/sessions/{{ _.id }}/qr",
+      "metaSortKey": 7,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_8",
+      "_type": "request",
+      "parentId": "fld_sess_es",
+      "name": "QR code como imagem PNG",
+      "description": "A mesma informação de `/qr`, servida como imagem para uso direto em `<img>`.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/sessions/{{ _.id }}/qr.png",
+      "metaSortKey": 8,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_9",
+      "_type": "request",
+      "parentId": "fld_sess_es",
+      "name": "Conectar por código de pareamento",
+      "description": "Alternativa ao QR: gera um código de 8 dígitos que o usuário digita no WhatsApp do celular, em Aparelhos conectados.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/sessions/{{ _.id }}/pairing-code",
+      "metaSortKey": 9,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_10",
+      "_type": "request",
+      "parentId": "fld_sess_es",
+      "name": "Iniciar a sessão",
+      "description": "Idempotente.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/sessions/{{ _.id }}/start",
+      "metaSortKey": 10,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_11",
+      "_type": "request",
+      "parentId": "fld_sess_es",
+      "name": "Parar a sessão",
+      "description": "Desconecta sem desfazer o pareamento — ao reiniciar, não pede QR de novo.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/sessions/{{ _.id }}/stop",
+      "metaSortKey": 11,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_12",
+      "_type": "request",
+      "parentId": "fld_sess_es",
+      "name": "Reiniciar a sessão",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/sessions/{{ _.id }}/restart",
+      "metaSortKey": 12,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_13",
+      "_type": "request",
+      "parentId": "fld_sess_es",
+      "name": "Desconectar o número",
+      "description": "Desfaz o pareamento. O número precisará escanear o QR novamente para reconectar.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/sessions/{{ _.id }}/logout",
+      "metaSortKey": 13,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_14",
+      "_type": "request",
+      "parentId": "fld_mensagens",
+      "name": "Enviar texto",
+      "description": "O destinatário pode ser informado em `to` (número com código do país) ou `chatId` (formato do WhatsApp).",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/messages/text",
+      "metaSortKey": 14,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_15",
+      "_type": "request",
+      "parentId": "fld_mensagens",
+      "name": "Enviar imagem",
+      "description": "O arquivo pode vir por `url`, `base64` ou upload multipart no campo `file` — exatamente uma dessas formas. URLs apontando para endereços internos são recusadas por segurança.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/messages/image",
+      "metaSortKey": 15,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_16",
+      "_type": "request",
+      "parentId": "fld_mensagens",
+      "name": "Enviar documento",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/messages/file",
+      "metaSortKey": 16,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_17",
+      "_type": "request",
+      "parentId": "fld_mensagens",
+      "name": "Enviar áudio",
+      "description": "O WhatsApp espera OGG/Opus. Use `convert: true` para converter automaticamente a partir de outros formatos.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/messages/voice",
+      "metaSortKey": 17,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_18",
+      "_type": "request",
+      "parentId": "fld_mensagens",
+      "name": "Enviar vídeo",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/messages/video",
+      "metaSortKey": 18,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_19",
+      "_type": "request",
+      "parentId": "fld_mensagens",
+      "name": "Enviar localização",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/messages/location",
+      "metaSortKey": 19,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_20",
+      "_type": "request",
+      "parentId": "fld_mensagens",
+      "name": "Enviar contato",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/messages/contact",
+      "metaSortKey": 20,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_21",
+      "_type": "request",
+      "parentId": "fld_mensagens",
+      "name": "Reagir a uma mensagem",
+      "description": "Emoji vazio remove a reação.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/messages/reaction",
+      "metaSortKey": 21,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_22",
+      "_type": "request",
+      "parentId": "fld_mensagens",
+      "name": "Marcar como lida",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/messages/seen",
+      "metaSortKey": 22,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_23",
+      "_type": "request",
+      "parentId": "fld_mensagens",
+      "name": "Indicar digitação",
+      "description": "Mostra \"digitando...\" no aparelho do destinatário.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/messages/typing",
+      "metaSortKey": 23,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_24",
+      "_type": "request",
+      "parentId": "fld_mensagens",
+      "name": "Consultar o histórico",
+      "description": "Lista as mensagens que passaram por este gateway, das mais recentes para as mais antigas.\n\n**Paginação por cursor.** Use o `nextCursor` da resposta em `?cursor=` para buscar a página seguinte. Diferente de offset, o cursor não repete nem pula registros quando chegam mensagens novas durante a navegação. Quando `nextCursor` vier nulo, acabou.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/messages",
+      "metaSortKey": 24,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_25",
+      "_type": "request",
+      "parentId": "fld_mensagens",
+      "name": "Exportar o histórico em CSV",
+      "description": "Aceita os mesmos filtros da listagem. A resposta é transmitida em fluxo.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/messages/export",
+      "metaSortKey": 25,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_26",
+      "_type": "request",
+      "parentId": "fld_mensagens",
+      "name": "Detalhe de uma mensagem",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/messages/{{ _.id }}",
+      "metaSortKey": 26,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_27",
+      "_type": "request",
+      "parentId": "fld_chats___contatos",
+      "name": "Listar conversas do aparelho",
+      "description": "Lê as conversas direto do dispositivo conectado — inclui conversas anteriores à conexão. Diferente de `GET /v1/messages`, que traz apenas o que passou por este gateway. Exige a sessão conectada.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/sessions/{{ _.id }}/chats",
+      "metaSortKey": 27,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_28",
+      "_type": "request",
+      "parentId": "fld_chats___contatos",
+      "name": "Mensagens de uma conversa, lidas do aparelho",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/sessions/{{ _.id }}/chats/{{ _.chatId }}/messages",
+      "metaSortKey": 28,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_29",
+      "_type": "request",
+      "parentId": "fld_chats___contatos",
+      "name": "Verificar se um número tem WhatsApp",
+      "description": "Consulte antes de enviar, para não registrar falhas evitáveis.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/sessions/{{ _.id }}/contacts/check",
+      "metaSortKey": 29,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_30",
+      "_type": "request",
+      "parentId": "fld_m_dia",
+      "name": "Baixar a mídia de uma mensagem",
+      "description": "Serve o arquivo autenticando pela sua API key. O serviço de WhatsApp nunca é exposto diretamente — este endpoint é o único caminho para os arquivos.\n\nArquivos ficam disponíveis por tempo limitado após o recebimento.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/media/{{ _.messageId }}",
+      "metaSortKey": 30,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_31",
+      "_type": "request",
+      "parentId": "fld_sess_es",
+      "name": "Acompanhar uma sessão em tempo real",
+      "description": "Fluxo Server-Sent Events com as mudanças de estado e as mensagens da sessão. Útil para saber o instante em que o QR foi lido, sem ficar consultando.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/sessions/{{ _.id }}/events",
+      "metaSortKey": 31,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_32",
+      "_type": "request",
+      "parentId": "fld_webhooks",
+      "name": "Cadastrar um endpoint",
+      "description": "Registre a URL do seu sistema para receber eventos das **suas** sessões.\n\nCada entrega leva o header `X-Gateway-Signature: t=<unix>,v1=<hmac>`, onde o HMAC-SHA256 cobre `\"{t}.{corpo}\"` — o timestamp entra no que é assinado justamente para que você possa recusar entregas antigas.\n\nResponda 2xx rapidamente e processe de forma assíncrona: entregas que demoram mais que o tempo limite são retentadas.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/webhook-endpoints",
+      "metaSortKey": 32,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_33",
+      "_type": "request",
+      "parentId": "fld_webhooks",
+      "name": "Listar seus endpoints",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/webhook-endpoints",
+      "metaSortKey": 33,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_34",
+      "_type": "request",
+      "parentId": "fld_webhooks",
+      "name": "Detalhe de um endpoint",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/webhook-endpoints/{{ _.id }}",
+      "metaSortKey": 34,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_35",
+      "_type": "request",
+      "parentId": "fld_webhooks",
+      "name": "Editar um endpoint",
+      "description": "Enviar `active: true` reativa um endpoint que foi desligado automaticamente por falhas seguidas, zerando o contador.",
+      "method": "PATCH",
+      "url": "{{ _.baseUrl }}/v1/webhook-endpoints/{{ _.id }}",
+      "metaSortKey": 35,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sessionId\": \"\"\n}"
+      }
+    },
+    {
+      "_id": "req_36",
+      "_type": "request",
+      "parentId": "fld_webhooks",
+      "name": "Remover um endpoint",
+      "description": "",
+      "method": "DELETE",
+      "url": "{{ _.baseUrl }}/v1/webhook-endpoints/{{ _.id }}",
+      "metaSortKey": 36,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_37",
+      "_type": "request",
+      "parentId": "fld_webhooks",
+      "name": "Trocar o segredo de assinatura",
+      "description": "O segredo anterior deixa de valer imediatamente.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/webhook-endpoints/{{ _.id }}/rotate-secret",
+      "metaSortKey": 37,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_38",
+      "_type": "request",
+      "parentId": "fld_webhooks",
+      "name": "Enviar um evento de teste",
+      "description": "Dispara um evento `ping` para conferir a configuração do seu endpoint.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/webhook-endpoints/{{ _.id }}/test",
+      "metaSortKey": 38,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_39",
+      "_type": "request",
+      "parentId": "fld_webhooks",
+      "name": "Histórico de entregas",
+      "description": "Cada tentativa é registrada, com código HTTP, duração e erro.",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/v1/webhook-endpoints/{{ _.id }}/deliveries",
+      "metaSortKey": 39,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    },
+    {
+      "_id": "req_40",
+      "_type": "request",
+      "parentId": "fld_webhooks",
+      "name": "Reenviar uma entrega",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/v1/webhook-deliveries/{{ _.id }}/retry",
+      "metaSortKey": 40,
+      "headers": [
+        {
+          "name": "X-API-Key",
+          "value": "{{ _.apiKey }}"
+        }
+      ]
+    }
+  ]
+}

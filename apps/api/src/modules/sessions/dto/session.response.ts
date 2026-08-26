@@ -6,7 +6,7 @@ export class SessionResponse {
   @ApiProperty({ example: 'clx1a2b3c4d5e6f7g8h9' })
   id!: string;
 
-  @ApiPropertyOptional({ nullable: true, example: 'Comercial' })
+  @ApiPropertyOptional({ type: String, nullable: true, example: 'Comercial' })
   label!: string | null;
 
   @ApiProperty({
@@ -20,13 +20,14 @@ export class SessionResponse {
   statusLabel!: string;
 
   @ApiPropertyOptional({
+    type: String,
     nullable: true,
     description: 'Preenchido quando o número conecta.',
     example: '5511999999999',
   })
   phoneNumber!: string | null;
 
-  @ApiPropertyOptional({ nullable: true, example: 'Comercial da Empresa' })
+  @ApiPropertyOptional({ type: String, nullable: true, example: 'Comercial da Empresa' })
   pushName!: string | null;
 
   @ApiProperty({ example: 'NOWEB' })
@@ -38,16 +39,20 @@ export class SessionResponse {
   })
   qrRequestCount!: number;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: Date, nullable: true })
   lastQrRequestedAt!: Date | null;
 
-  @ApiPropertyOptional({ nullable: true, description: 'Quando o número foi conectado.' })
+  @ApiPropertyOptional({
+    type: Date,
+    nullable: true,
+    description: 'Quando o número foi conectado.',
+  })
   connectedAt!: Date | null;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: Date, nullable: true })
   disconnectedAt!: Date | null;
 
-  @ApiPropertyOptional({ nullable: true, description: 'Seus dados livres.' })
+  @ApiPropertyOptional({ type: Object, nullable: true, description: 'Seus dados livres.' })
   metadata!: Record<string, unknown> | null;
 
   @ApiProperty() createdAt!: Date;

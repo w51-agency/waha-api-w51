@@ -214,7 +214,6 @@ export class SessionsController {
     summary: 'Excluir a sessão',
     description: 'Remove a sessão do serviço de WhatsApp e do gateway.',
   })
-  @ApiQuery({ name: 'id', required: false })
   remove(@Param('id') id: string, @CurrentApiKey() k: AuthenticatedApiKey, @Req() r: Request) {
     return this.sessions.remove(id, k, r);
   }

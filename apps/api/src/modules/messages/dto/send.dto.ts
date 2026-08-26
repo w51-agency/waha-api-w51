@@ -179,7 +179,7 @@ export class SendResultDto {
   @ApiProperty({ description: 'Id da mensagem no gateway. Use-o para consultar o status.' })
   id!: string;
 
-  @ApiPropertyOptional({ nullable: true, description: 'Id da mensagem no WhatsApp.' })
+  @ApiPropertyOptional({ type: String, nullable: true, description: 'Id da mensagem no WhatsApp.' })
   wahaId!: string | null;
 
   @ApiProperty({ example: 'SENT' })
@@ -190,7 +190,11 @@ export class SendResultDto {
 
   @ApiProperty() timestamp!: Date;
 
-  @ApiPropertyOptional({ nullable: true, description: 'Motivo, quando o envio falha.' })
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'Motivo, quando o envio falha.',
+  })
   error!: string | null;
 }
 

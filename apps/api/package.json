@@ -20,7 +20,8 @@
     "start": "node dist/src/main.js",
     "start:debug": "nest start --debug --watch",
     "test:watch": "vitest",
-    "test:cov": "vitest run --coverage"
+    "test:cov": "vitest run --coverage",
+    "openapi:export": "nest build && node dist/src/tools/export-openapi.js"
   },
   "dependencies": {
     "@gateway/shared": "workspace:*",

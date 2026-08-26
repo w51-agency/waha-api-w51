@@ -18,7 +18,9 @@
     "test": "pnpm -r test",
     "test:e2e": "pnpm -r test:e2e",
     "clean": "pnpm -r exec rm -rf dist node_modules/.cache && rm -rf node_modules",
-    "smoke": "./scripts/smoke.sh"
+    "smoke": "./scripts/smoke.sh",
+    "openapi:export": "pnpm --filter @gateway/api openapi:export && node scripts/gen-collections.mjs",
+    "openapi:lint": "npx --yes @redocly/cli@latest lint docs/openapi.json"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
