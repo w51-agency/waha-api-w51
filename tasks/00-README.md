@@ -21,7 +21,7 @@ objetivo, contexto, checklist e critérios de aceite executáveis.
 | [05](05-auth-api-key.md) | Autenticação por API key | ✅ concluída |
 | [06](06-auth-painel-jwt.md) | Autenticação do painel (JWT) | ✅ concluída |
 | [07](07-cliente-waha.md) | Cliente WAHA tipado | ✅ concluída |
-| [08](08-aplicacoes-api-keys.md) | Aplicações e API keys (admin) | ⬜ pendente |
+| [08](08-aplicacoes-api-keys.md) | Aplicações e API keys (admin) | ✅ concluída |
 | [09](09-sessoes-qr.md) | Sessões e fluxo de QR rastreado | ⬜ pendente |
 | [10](10-ingestao-webhooks-waha.md) | Ingestão de webhooks do WAHA | ⬜ pendente |
 | [11](11-envio-mensagens.md) | Envio de mensagens (texto e mídia) | ⬜ pendente |

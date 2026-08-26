@@ -14,6 +14,8 @@ import { RedisModule } from './redis/redis.module';
 import { RedisService } from './redis/redis.service';
 import { AccountModule } from './modules/account/account.module';
 import { AdminAuthModule } from './modules/admin-auth/admin-auth.module';
+import { ApplicationsModule } from './modules/applications/applications.module';
+import { AuditModule } from './modules/audit/audit.module';
 import { WahaModule } from './modules/waha/waha.module';
 import { ApiKeyGuard } from './modules/api-keys/api-key.guard';
 import { ApiKeyModule } from './modules/api-keys/api-key.module';
@@ -49,6 +51,8 @@ import { ApiKeyModule } from './modules/api-keys/api-key.module';
     ApiKeyModule,
     AccountModule,
     AdminAuthModule,
+    AuditModule,
+    ApplicationsModule,
   ],
   controllers: [AppController],
   providers: [
