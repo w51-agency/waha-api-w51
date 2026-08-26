@@ -17,7 +17,8 @@
     "format:check": "prettier --check .",
     "test": "pnpm -r test",
     "test:e2e": "pnpm -r test:e2e",
-    "clean": "pnpm -r exec rm -rf dist node_modules/.cache && rm -rf node_modules"
+    "clean": "pnpm -r exec rm -rf dist node_modules/.cache && rm -rf node_modules",
+    "smoke": "./scripts/smoke.sh"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",

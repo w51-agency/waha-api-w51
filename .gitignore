@@ -44,3 +44,9 @@ tmp/
 tasks/
 # client do Prisma (gerado; regenerado por `pnpm db:generate` no postinstall)
 apps/api/src/generated/
+
+# saída de compilação nunca deve aparecer ao lado do fonte TypeScript
+packages/*/src/**/*.js
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.map
+apps/*/src/**/*.js.map

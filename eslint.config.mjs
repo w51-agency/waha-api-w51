@@ -69,6 +69,16 @@ export default tseslint.config(
     },
   },
 
+  // A API usa injeção de dependência por decorator, que depende do metadado de
+  // tipo emitido em tempo de compilação. `import type` apaga esse metadado, e o
+  // Nest passa a falhar na subida com "can't resolve dependencies of X (?)" —
+  // um erro cujo rastro não aponta para o import. Como o autofix da regra
+  // converte imports sem saber disso, ela fica desligada em apps/api.
+  {
+    files: ['apps/api/**/*.ts'],
+    rules: { '@typescript-eslint/consistent-type-imports': 'off' },
+  },
+
   // Scripts de linha de comando (seed, utilitários) existem para falar com o
   // terminal: console é a saída correta neles, não um descuido.
   {
