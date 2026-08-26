@@ -17,6 +17,7 @@ import { AccountModule } from './modules/account/account.module';
 import { AdminAuthModule } from './modules/admin-auth/admin-auth.module';
 import { ApplicationsModule } from './modules/applications/applications.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { HistoryModule } from './modules/history/history.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { WahaModule } from './modules/waha/waha.module';
@@ -60,6 +61,7 @@ import { ApiKeyModule } from './modules/api-keys/api-key.module';
     ApplicationsModule,
     SessionsModule,
     MessagesModule,
+    HistoryModule,
     WebhookIngestModule,
   ],
   controllers: [AppController],
