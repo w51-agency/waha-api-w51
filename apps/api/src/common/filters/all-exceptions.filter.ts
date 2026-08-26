@@ -233,9 +233,22 @@ export class AllExceptionsFilter implements ExceptionFilter {
 function groupValidationMessages(messages: string[]): Record<string, string[]> {
   const grouped: Record<string, string[]> = {};
 
-  for (const message of messages) {
-    const field = message.split(' ')[0] ?? '_';
-    (grouped[field] ??= []).push(message);
+  for (const bruta of messages) {
+    // O class-validator emite esta em inglês, e ela é comum: basta um campo
+    // digitado errado no corpo. Traduzir aqui evita quebrar a convenção da API
+    // logo no erro mais frequente de integração.
+    const naoDeveExistir = /^property (\w+) should not exist$/.exec(bruta);
+
+    if (naoDeveExistir) {
+      const campo = naoDeveExistir[1] ?? '_';
+      (grouped[campo] ??= []).push(
+        `O campo "${campo}" não é reconhecido. Verifique a grafia na documentação em /docs.`,
+      );
+      continue;
+    }
+
+    const campo = bruta.split(' ')[0] ?? '_';
+    (grouped[campo] ??= []).push(bruta);
   }
 
   return grouped;

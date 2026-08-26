@@ -8,7 +8,7 @@
     "moduleResolution": "node",
     "target": "ES2023",
     "lib": ["ES2023"],
-    "types": ["node"],
+    "types": ["node", "multer"],
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "isolatedModules": false,

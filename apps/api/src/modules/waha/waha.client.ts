@@ -408,13 +408,46 @@ export class WahaClient {
     if (status === 401 || status === 403) return new WahaAuthError(detalhe);
     if (status === 404) return new WahaSessionNotFoundError(session ?? 'desconhecida', detalhe);
     if (status === 422 || status === 400) {
-      return new WahaValidationError(
-        mensagem || 'O serviço de WhatsApp recusou a requisição.',
-        detalhe,
-      );
+      return new WahaValidationError(traduzirMensagemWaha(mensagem, session), detalhe);
     }
     return new WahaUnavailableError(`HTTP ${status}`, detalhe);
   }
+}
+
+/**
+ * Traduz as mensagens de erro do WAHA.
+ *
+ * Elas vêm em inglês e costumam ser lacônicas ("Session status is not as
+ * expected"). Como chegam direto ao integrador, traduzi-las e acrescentar o que
+ * fazer é a diferença entre um erro acionável e um chamado de suporte.
+ */
+function traduzirMensagemWaha(mensagem: string, session?: string): string {
+  const alvo = session ? ` (sessão "${session}")` : '';
+
+  const regras: Array<[RegExp, string]> = [
+    [
+      /session status is not as expected|session is not working|not connected/i,
+      `A sessão não está conectada${alvo}. Verifique o status em GET /v1/sessions/{id} e escaneie o QR code se necessário.`,
+    ],
+    [
+      /number.*not.*(exist|registered)|not.*a.*whatsapp.*(user|number)/i,
+      'O número informado não possui WhatsApp.',
+    ],
+    [/invalid.*chatid|chatid.*invalid/i, 'O destinatário informado é inválido.'],
+    [/file.*too.*large|payload.*too.*large/i, 'O arquivo excede o tamanho aceito pelo WhatsApp.'],
+    [/unsupported.*(media|mimetype|format)/i, 'O formato do arquivo não é aceito pelo WhatsApp.'],
+    [
+      /rate.*limit|too many requests/i,
+      'O WhatsApp está limitando os envios. Aguarde antes de tentar novamente.',
+    ],
+    [/timeout/i, 'O WhatsApp demorou demais para responder.'],
+  ];
+
+  for (const [padrao, traducao] of regras) {
+    if (padrao.test(mensagem)) return traducao;
+  }
+
+  return mensagem || 'O serviço de WhatsApp recusou a requisição.';
 }
 
 /** Backoff exponencial com jitter — sem o jitter, falhas simultâneas voltam juntas. */
