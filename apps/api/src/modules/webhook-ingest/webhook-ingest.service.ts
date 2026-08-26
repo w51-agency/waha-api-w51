@@ -15,8 +15,8 @@ import {
 } from '@gateway/shared';
 
 import { PrismaService } from '../../prisma/prisma.service';
-import { mapStatus } from '../sessions/sessions.service';
 import { EventsBus } from '../events/events.bus';
+import { mapStatus } from '../sessions/sessions.service';
 import { WebhooksOutService } from '../webhooks-out/webhooks-out.service';
 
 import type { Session } from '../../generated/prisma/client';

@@ -1,0 +1,113 @@
+@import 'tailwindcss';
+
+/*
+ * Tema do painel.
+ *
+ * A paleta é definida como tokens em `:root`, com o modo escuro redefinindo
+ * apenas os valores — nunca as regras. Assim, uma cor nova precisa ser
+ * declarada uma vez e funciona nos dois temas.
+ */
+@theme {
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', monospace;
+}
+
+:root {
+  --fundo: oklch(98.5% 0.002 250);
+  --superficie: oklch(100% 0 0);
+  --superficie-2: oklch(96.5% 0.003 250);
+  --borda: oklch(90% 0.005 250);
+  --texto: oklch(22% 0.01 250);
+  --texto-suave: oklch(50% 0.012 250);
+  --texto-fraco: oklch(64% 0.01 250);
+
+  --primaria: oklch(55% 0.16 255);
+  --primaria-texto: oklch(100% 0 0);
+  --primaria-suave: oklch(95% 0.03 255);
+
+  /* Estados — usados por badges de status de sessão e mensagem */
+  --sucesso: oklch(58% 0.14 152);
+  --sucesso-suave: oklch(95% 0.04 152);
+  --alerta: oklch(72% 0.15 75);
+  --alerta-suave: oklch(96% 0.05 75);
+  --erro: oklch(58% 0.19 25);
+  --erro-suave: oklch(95% 0.04 25);
+  --neutro: oklch(60% 0.01 250);
+  --neutro-suave: oklch(95% 0.003 250);
+
+  --sombra: 0 1px 2px oklch(0% 0 0 / 0.04), 0 2px 8px oklch(0% 0 0 / 0.04);
+  --raio: 0.625rem;
+}
+
+.dark {
+  --fundo: oklch(17% 0.012 250);
+  --superficie: oklch(21% 0.014 250);
+  --superficie-2: oklch(25% 0.014 250);
+  --borda: oklch(31% 0.014 250);
+  --texto: oklch(96% 0.004 250);
+  --texto-suave: oklch(72% 0.012 250);
+  --texto-fraco: oklch(56% 0.012 250);
+
+  --primaria: oklch(66% 0.15 255);
+  --primaria-texto: oklch(15% 0.02 255);
+  --primaria-suave: oklch(28% 0.06 255);
+
+  --sucesso: oklch(70% 0.15 152);
+  --sucesso-suave: oklch(27% 0.05 152);
+  --alerta: oklch(78% 0.15 75);
+  --alerta-suave: oklch(30% 0.06 75);
+  --erro: oklch(68% 0.18 25);
+  --erro-suave: oklch(28% 0.06 25);
+  --neutro: oklch(65% 0.01 250);
+  --neutro-suave: oklch(27% 0.008 250);
+
+  --sombra: 0 1px 2px oklch(0% 0 0 / 0.3), 0 2px 8px oklch(0% 0 0 / 0.2);
+}
+
+* {
+  border-color: var(--borda);
+}
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Barra de rolagem discreta — a densidade de dados do painel a deixa muito visível */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--borda);
+  border-radius: 5px;
+  border: 2px solid var(--fundo);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--texto-fraco);
+}
+
+/* Respeita quem pediu menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -82,8 +82,14 @@ export default tseslint.config(
   // Scripts de linha de comando (seed, utilitários) existem para falar com o
   // terminal: console é a saída correta neles, não um descuido.
   {
-    files: ['**/prisma/*.ts', '**/scripts/**/*.ts', '**/*.config.ts', '**/*.config.mts'],
-    rules: { 'no-console': 'off' },
+    files: [
+      '**/prisma/*.ts',
+      '**/scripts/**/*.{ts,mjs,js}',
+      '**/src/tools/**/*.ts',
+      '**/*.config.{ts,mts,js,mjs}',
+    ],
+    languageOptions: { globals: { ...globals.node } },
+    rules: { 'no-console': 'off', 'no-undef': 'off' },
   },
 
   prettier,

@@ -29,7 +29,7 @@ objetivo, contexto, checklist e critérios de aceite executáveis.
 | [13](13-webhooks-saida.md) | Webhooks de saída para integradores | ✅ concluída |
 | [14](14-metricas-auditoria-sse.md) | Métricas, auditoria e SSE | ✅ concluída |
 | [15](15-documentacao-openapi.md) | Documentação OpenAPI completa | ✅ concluída |
-| [16](16-painel-fundacao.md) | Painel — fundação | ⬜ pendente |
+| [16](16-painel-fundacao.md) | Painel — fundação | ✅ concluída |
 | [17](17-painel-sessoes-qr.md) | Painel — sessões e QR ao vivo | ⬜ pendente |
 | [18](18-painel-mensagens-metricas.md) | Painel — mensagens e métricas | ⬜ pendente |
 | [19](19-painel-apps-chaves-auditoria.md) | Painel — apps, chaves, webhooks e auditoria | ⬜ pendente |

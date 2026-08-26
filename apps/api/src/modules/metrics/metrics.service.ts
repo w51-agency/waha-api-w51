@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
+import { DeliveryStatus, Direction, MessageStatus, SessionStatus } from '@gateway/shared';
+
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../redis/redis.service';
-
-import { DeliveryStatus, Direction, MessageStatus, SessionStatus } from '@gateway/shared';
 
 export type Granularidade = 'hour' | 'day';
 

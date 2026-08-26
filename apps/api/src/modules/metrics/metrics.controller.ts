@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Query, Req, Sse, UseGuards } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import {
   ApiBearerAuth,
   ApiExcludeEndpoint,
@@ -10,8 +11,8 @@ import {
 import { SkipThrottle } from '@nestjs/throttler';
 import { Observable, interval, map, merge } from 'rxjs';
 
-import { Public } from '../../common/decorators/public.decorator';
 import { CurrentApplication } from '../../common/decorators/current-app.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { UnauthorizedError, ValidationError } from '../../common/errors/problem-details';
 import { AppConfig } from '../../config';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -21,10 +22,8 @@ import { EventsBus } from '../events/events.bus';
 import { MetricsService, type Granularidade } from './metrics.service';
 
 import type { AuthenticatedApiKey } from '../api-keys/api-key.types';
-import type { Request } from 'express';
 import type { MessageEvent } from '@nestjs/common';
-
-import { JwtService } from '@nestjs/jwt';
+import type { Request } from 'express';
 
 /** Intervalo do heartbeat, abaixo do timeout típico de proxy (30–60 s). */
 const HEARTBEAT_MS = 25_000;
