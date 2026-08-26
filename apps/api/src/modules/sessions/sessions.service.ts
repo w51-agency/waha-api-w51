@@ -85,7 +85,8 @@ export class SessionsService {
         label: dto.label ?? null,
         status: SessionStatus.STARTING,
         engine: this.config.get('WHATSAPP_DEFAULT_ENGINE'),
-        createdByApiKeyId: apiKey.id,
+        // Vazio quando a criação vem do painel, que não tem API key.
+        createdByApiKeyId: apiKey.id || null,
         createdVia: 'API',
         webhookSecret,
         meta: (dto.metadata ?? undefined) as never,
@@ -101,7 +102,7 @@ export class SessionsService {
             'application.id': applicationId,
             'application.slug': apiKey.application.slug,
             'gateway.session.id': session.id,
-            'created.by.apikey': apiKey.id,
+            'created.by.apikey': apiKey.id || 'painel',
           },
           // Sem o store, o motor NOWEB não dá acesso a chats, contatos nem
           // histórico — a tarefa 12 depende disto.

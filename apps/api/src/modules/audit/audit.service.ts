@@ -66,11 +66,14 @@ export class AuditService {
     action: string,
     input: Omit<AuditInput, 'action' | 'actorType'> & { apiKeyId: string; apiKeyLabel: string },
   ) {
+    // Sem id de chave, a ação veio do painel operando em nome da aplicação.
+    const doPainel = !input.apiKeyId;
+
     return this.record({
       ...input,
-      actorType: ActorType.API_KEY,
-      actorId: input.apiKeyId,
-      actorLabel: input.apiKeyLabel,
+      actorType: doPainel ? ActorType.ADMIN : ActorType.API_KEY,
+      actorId: input.apiKeyId || null,
+      actorLabel: doPainel ? 'painel' : input.apiKeyLabel,
       action,
     });
   }

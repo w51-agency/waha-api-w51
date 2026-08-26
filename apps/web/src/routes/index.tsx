@@ -1,14 +1,15 @@
 import { EstadoVazio } from '@/components/ui';
+import { DetalheDaSessao } from '@/routes/sessoes/detalhe';
+import { ListaDeSessoes } from '@/routes/sessoes/lista';
 
-/**
- * Roteador do painel.
- *
- * As telas concretas chegam nas tarefas 17 a 19; aqui fica o esqueleto e o
- * tratamento de rota desconhecida.
- */
-export function Rotas({ rota }: { rota: string; navegar: (para: string) => void }) {
+export function Rotas({ rota, navegar }: { rota: string; navegar: (para: string) => void }) {
   if (rota === '/') return <EmConstrucao titulo="Visão geral" tarefa={18} />;
-  if (rota.startsWith('/sessoes')) return <EmConstrucao titulo="Números" tarefa={17} />;
+
+  if (rota === '/sessoes') return <ListaDeSessoes navegar={navegar} />;
+
+  const detalhe = /^\/sessoes\/([^/]+)$/.exec(rota);
+  if (detalhe) return <DetalheDaSessao sessaoId={detalhe[1]!} navegar={navegar} />;
+
   if (rota.startsWith('/mensagens')) return <EmConstrucao titulo="Mensagens" tarefa={18} />;
   if (rota.startsWith('/aplicacoes')) return <EmConstrucao titulo="Aplicações" tarefa={19} />;
   if (rota.startsWith('/webhooks')) return <EmConstrucao titulo="Webhooks" tarefa={19} />;
