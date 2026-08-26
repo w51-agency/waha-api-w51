@@ -140,6 +140,16 @@ explícito. O erro só aparece em tempo de execução — `build` e `typecheck` 
 Resolvido emitindo CommonJS. O consumidor principal é o NestJS, que é CJS; o Vite
 (`apps/web`) pré-empacota dependências CJS sem atrito, então não custa nada do outro lado.
 
+### O pacote shared passou a emitir CommonJS
+
+Ao ganhar um subdiretório (`waha/types`), o `shared` quebrou: com `"type": "module"`, o
+TypeScript emite o re-export sem extensão, e o Node ESM exige `.js` explícito. O erro só
+aparecia em tempo de execução — `build` e `typecheck` seguiam verdes, e foi o `pnpm smoke`
+que o pegou.
+
+Resolvido emitindo CommonJS. O consumidor principal é o NestJS, que é CJS; o Vite
+(`apps/web`) pré-empacota dependências CJS sem atrito, então não custa nada do outro lado.
+
 ### Verificação executada
 
 ```
