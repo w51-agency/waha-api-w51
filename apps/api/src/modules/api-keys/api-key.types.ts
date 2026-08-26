@@ -17,5 +17,11 @@ declare module 'express' {
   interface Request {
     apiKey?: AuthenticatedApiKey;
     admin?: { username: string };
+    /**
+     * Corpo bruto, preservado pelo `rawBody: true` do bootstrap.
+     * Indispensável para verificar o HMAC dos webhooks do WAHA, que cobre os
+     * bytes exatos recebidos.
+     */
+    rawBody?: Buffer;
   }
 }

@@ -19,6 +19,7 @@ import { ApplicationsModule } from './modules/applications/applications.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { WahaModule } from './modules/waha/waha.module';
+import { WebhookIngestModule } from './modules/webhook-ingest/webhook-ingest.module';
 import { ApiKeyGuard } from './modules/api-keys/api-key.guard';
 import { ApiKeyModule } from './modules/api-keys/api-key.module';
 
@@ -57,6 +58,7 @@ import { ApiKeyModule } from './modules/api-keys/api-key.module';
     AuditModule,
     ApplicationsModule,
     SessionsModule,
+    WebhookIngestModule,
   ],
   controllers: [AppController],
   providers: [
