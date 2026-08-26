@@ -1,6 +1,7 @@
-import { Controller, Get, Param, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Header, Param, Query, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 
+import { AceitaTokenNaQuery } from '../../common/decorators/public.decorator';
 import { NotFoundError } from '../../common/errors/problem-details';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AdminGuard } from '../admin-auth/admin.guard';
@@ -50,6 +51,8 @@ export class AdminHistoryController {
   }
 
   @Get('export')
+  // Download por window.open não consegue enviar cabeçalho.
+  @AceitaTokenNaQuery()
   @ApiOperation({ summary: 'Exportar em CSV' })
   async export(
     @Query() query: ListMessagesQuery & { applicationId?: string },
@@ -99,6 +102,35 @@ export class AdminHistoryController {
    * exatamente o limite pedido, e o cursor da última linha continua válido
    * porque a ordenação é a mesma em todas as consultas.
    */
+  /**
+   * Serve a mídia de uma mensagem para o painel.
+   *
+   * Espelha `/v1/media/{id}`, mas autenticado pelo JWT do painel. Aceita o token
+   * na query porque `<img src>` e `<audio src>` não enviam cabeçalhos.
+   */
+  @Get(':id/media')
+  @AceitaTokenNaQuery()
+  @Header('Cache-Control', 'private, max-age=3600')
+  @ApiOperation({ summary: 'Baixar a mídia de uma mensagem' })
+  async media(@Param('id') id: string, @Res() res: Response): Promise<void> {
+    const mensagem = await this.prisma.message.findUnique({
+      where: { id },
+      select: { applicationId: true },
+    });
+
+    if (!mensagem) throw new NotFoundError('Mensagem não encontrada.', 'message-not-found');
+
+    const { corpo, contentType, filename } = await this.history.fetchMedia(
+      id,
+      mensagem.applicationId,
+    );
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Length', corpo.length);
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    res.send(corpo);
+  }
+
   private async listarTodas(query: ListMessagesQuery) {
     const aplicacoes = await this.prisma.application.findMany({ select: { id: true } });
 

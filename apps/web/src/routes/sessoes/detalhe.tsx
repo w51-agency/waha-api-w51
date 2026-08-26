@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, QrCode, Smartphone } from 'lucide-react';
 import { useState } from 'react';
 
+import { SessionStatus } from '@gateway/shared';
+
 import { Badge, Botao, Cartao, Esqueleto, EstadoVazio } from '@/components/ui';
 import { api } from '@/lib/api';
 import { TOM_SESSAO } from '@/lib/status';
@@ -11,7 +13,6 @@ import { MenuDeAcoes } from './lista';
 import { DialogoQr } from './qr-dialogo';
 
 import type { Mensagem, PaginaMensagens, RegistroAuditoria, Sessao } from '@/lib/tipos';
-import { SessionStatus } from '@gateway/shared';
 
 export function DetalheDaSessao({
   sessaoId,

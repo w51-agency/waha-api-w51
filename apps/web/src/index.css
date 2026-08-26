@@ -111,3 +111,43 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* =============================================================================
+   Paleta de visualização de dados
+   =============================================================================
+   Valores validados pelo verificador da skill dataviz contra as superfícies
+   reais do painel (#ffffff no claro, #13191f no escuro):
+
+     categórica (entrada/saída)  todos os testes passam nos dois modos
+       claro  #2a78d6 / #eb6834  — CVD ΔE 24,7 · visão normal ΔE 33,6
+       escuro #3987e5 / #d95926  — CVD ΔE 26,8 · visão normal ΔE 31,8
+
+     rampa ordinal do funil de entrega (3 passos, um só matiz)
+       claro  #86b6ef → #2a78d6 → #184f95  — monotônica, ΔL ≥ 0,06, 2,11:1
+       escuro #86b6ef → #3987e5 → #256abf  — monotônica, ΔL ≥ 0,06, 3,28:1
+
+   Não trocar estes valores sem rodar o verificador de novo.
+   ============================================================================= */
+:root {
+  --serie-1: #2a78d6; /* mensagens recebidas */
+  --serie-2: #eb6834; /* mensagens enviadas  */
+
+  --funil-1: #86b6ef; /* enviada  */
+  --funil-2: #2a78d6; /* entregue */
+  --funil-3: #184f95; /* lida     */
+
+  --grade: oklch(92% 0.004 250);
+  --eixo: oklch(64% 0.01 250);
+}
+
+.dark {
+  --serie-1: #3987e5;
+  --serie-2: #d95926;
+
+  --funil-1: #86b6ef;
+  --funil-2: #3987e5;
+  --funil-3: #256abf;
+
+  --grade: oklch(29% 0.012 250);
+  --eixo: oklch(56% 0.012 250);
+}

@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
+import { SessionStatus } from '@gateway/shared';
+
 import {
   Badge,
   Botao,
@@ -30,7 +32,6 @@ import { cn, formatarTelefone, tempoRelativo } from '@/lib/utils';
 import { DialogoQr } from './qr-dialogo';
 
 import type { Aplicacao, Sessao } from '@/lib/tipos';
-import { SessionStatus } from '@gateway/shared';
 
 export function ListaDeSessoes({ navegar }: { navegar: (para: string) => void }) {
   const [filtroStatus, setFiltroStatus] = useState('');
