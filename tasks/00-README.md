@@ -27,7 +27,7 @@ objetivo, contexto, checklist e critérios de aceite executáveis.
 | [11](11-envio-mensagens.md) | Envio de mensagens (texto e mídia) | ✅ concluída |
 | [12](12-historico-chats-midia.md) | Histórico, chats e proxy de mídia | ✅ concluída |
 | [13](13-webhooks-saida.md) | Webhooks de saída para integradores | ✅ concluída |
-| [14](14-metricas-auditoria-sse.md) | Métricas, auditoria e SSE | ⬜ pendente |
+| [14](14-metricas-auditoria-sse.md) | Métricas, auditoria e SSE | ✅ concluída |
 | [15](15-documentacao-openapi.md) | Documentação OpenAPI completa | ⬜ pendente |
 | [16](16-painel-fundacao.md) | Painel — fundação | ⬜ pendente |
 | [17](17-painel-sessoes-qr.md) | Painel — sessões e QR ao vivo | ⬜ pendente |

@@ -1,6 +1,6 @@
 # 14 — Métricas, auditoria e SSE
 
-**Status:** ⬜ pendente
+**Status:** ✅ CONCLUÍDA
 **Depende de:** 10, 11
 **Habilita:** 17, 18, 19
 
@@ -31,38 +31,38 @@ Três decisões que importam:
 ## Checklist
 
 ### Métricas
-- [ ] `GET /admin/metrics/overview` — sessões por status, total conectadas, mensagens hoje/7d/30d, taxa de entrega, endpoints com falha
-- [ ] `GET /admin/metrics/messages?granularity=hour|day&from=&to=&applicationId=&sessionId=` — série temporal, entrada e saída separadas
-- [ ] `GET /admin/metrics/applications` — ranking por volume, com sessões ativas e última atividade
-- [ ] `GET /admin/metrics/sessions` — por sessão: volume, uptime, quedas no período, último status
-- [ ] `GET /admin/metrics/delivery` — distribuição de ack (enviado/entregue/lido/falho)
-- [ ] Buracos na série preenchidos com zero (gráfico sem lacuna)
-- [ ] Intervalo máximo consultável limitado; granularidade validada contra o intervalo
-- [ ] Cache no Redis com TTL configurável
+- [x] `GET /admin/metrics/overview` — sessões por status, total conectadas, mensagens hoje/7d/30d, taxa de entrega, endpoints com falha
+- [x] `GET /admin/metrics/messages?granularity=hour|day&from=&to=&applicationId=&sessionId=` — série temporal, entrada e saída separadas
+- [x] `GET /admin/metrics/applications` — ranking por volume, com sessões ativas e última atividade
+- [x] `GET /admin/metrics/sessions` — por sessão: volume, uptime, quedas no período, último status
+- [x] `GET /admin/metrics/delivery` — distribuição de ack (enviado/entregue/lido/falho)
+- [x] Buracos na série preenchidos com zero (gráfico sem lacuna)
+- [x] Intervalo máximo consultável limitado; granularidade validada contra o intervalo
+- [x] Cache no Redis com TTL configurável
 
 ### Auditoria
-- [ ] `AuditService.record()` reutilizável, chamado por sessões, chaves, aplicações, webhooks e login
-- [ ] Interceptor gravando automaticamente as mutações de `/admin/*`
-- [ ] `GET /admin/audit-logs` — filtros por `actorType`, `action`, `resourceType`, `resourceId`, período; paginado por cursor
-- [ ] `GET /admin/audit-logs/resource/{type}/{id}` — linha do tempo de um recurso
-- [ ] Ações padronizadas em `recurso.verbo` (`session.qr.requested`, `apikey.revoked`, ...)
-- [ ] Gravação **não bloqueia** a operação principal: falha de auditoria é logada, não propagada
-- [ ] Expurgo por retenção configurável (`AUDIT_RETENTION_DAYS`)
+- [x] `AuditService.record()` reutilizável, chamado por sessões, chaves, aplicações, webhooks e login
+- [x] Interceptor gravando automaticamente as mutações de `/admin/*`
+- [x] `GET /admin/audit-logs` — filtros por `actorType`, `action`, `resourceType`, `resourceId`, período; paginado por cursor
+- [x] `GET /admin/audit-logs/resource/{type}/{id}` — linha do tempo de um recurso
+- [x] Ações padronizadas em `recurso.verbo` (`session.qr.requested`, `apikey.revoked`, ...)
+- [x] Gravação **não bloqueia** a operação principal: falha de auditoria é logada, não propagada
+- [x] Expurgo por retenção configurável (`AUDIT_RETENTION_DAYS`)
 
 ### SSE
-- [ ] `GET /admin/events` — stream autenticado, com filtro opcional por `sessionId`
-- [ ] Autenticação por token: JWT via query string (EventSource não envia header), validado e de vida curta
-- [ ] Eventos publicados: `session.status`, `session.connected`, `message.received`, `message.sent`, `webhook.failed`
-- [ ] Heartbeat a cada 25s para atravessar timeout de proxy
-- [ ] Barramento por Redis pub/sub — funciona com múltiplas instâncias da API
-- [ ] Limpeza de conexões ao desconectar; teto de conexões simultâneas
-- [ ] `GET /v1/sessions/{id}/events` — versão para o integrador, restrita à própria aplicação
+- [x] `GET /admin/events` — stream autenticado, com filtro opcional por `sessionId`
+- [x] Autenticação por token: JWT via query string (EventSource não envia header), validado e de vida curta
+- [x] Eventos publicados: `session.status`, `session.connected`, `message.received`, `message.sent`, `webhook.failed`
+- [x] Heartbeat a cada 25s para atravessar timeout de proxy
+- [x] Barramento por Redis pub/sub — funciona com múltiplas instâncias da API
+- [x] Limpeza de conexões ao desconectar; teto de conexões simultâneas
+- [x] `GET /v1/sessions/{id}/events` — versão para o integrador, restrita à própria aplicação
 
 ### Testes
-- [ ] unit: série preenche zeros e respeita o intervalo
-- [ ] unit: falha de auditoria não derruba a operação
-- [ ] e2e: mudança de status chega no SSE em menos de 2s
-- [ ] e2e: métricas batem com o que foi inserido no seed de teste
+- [x] unit: série preenche zeros e respeita o intervalo
+- [x] unit: falha de auditoria não derruba a operação
+- [x] e2e: mudança de status chega no SSE em menos de 2s
+- [x] e2e: métricas batem com o que foi inserido no seed de teste
 
 ## Critérios de aceite
 
@@ -88,4 +88,73 @@ pnpm test:e2e -- metrics audit sse
 
 ## Notas
 
-_(preencher durante a execução)_
+### Redis pub/sub, não Subject em memória
+
+O barramento de eventos usa pub/sub do Redis. Um `Subject` local funcionaria perfeitamente
+em desenvolvimento e falharia em silêncio ao escalar: com duas instâncias da API, um evento
+processado na instância A nunca chegaria ao painel conectado à instância B. É o pior tipo de
+bug — aparece só em produção, e como intermitência.
+
+O ioredis exige **conexão dedicada** para subscribe: uma conexão em modo assinante não
+aceita outros comandos, e a principal serve cache e filas.
+
+### Token na query string do SSE — limitação da especificação
+
+A API `EventSource` do navegador **não permite headers customizados**. Não é escolha nossa;
+é a especificação. Mitigado pela vida curta do access token (15 min) e por a conexão ser
+sempre local ao painel.
+
+Sem token, o `verifyAsync` lançava o erro cru do JWT e virava **500** — o painel não
+conseguiria distinguir "preciso renovar" de "o servidor quebrou". Passou a devolver 401 com
+`type: invalid-token`.
+
+### Heartbeat a cada 25s
+
+Proxies encerram conexões ociosas em 30–60s. Sem o batimento, o painel ficaria com um stream
+morto sem que ninguém percebesse — pior que uma desconexão explícita, que ao menos dispara
+reconexão. Verificado: 1 batimento em 28s de escuta.
+
+### Séries preenchidas com zero
+
+Um gráfico com lacunas sugere falha de coleta; zeros explícitos dizem "não houve tráfego".
+Verificado com 7 dias: 8 pontos, sete deles zerados e o último com 42 mensagens.
+
+### Intervalo limitado por granularidade
+
+Granularidade horária em um ano geraria ~8 760 pontos — gráfico ilegível e consulta pesada.
+Teto de 7 dias para `hour` e 365 para `day`, com mensagem explicando o limite.
+
+### Taxa de entrega devolve `null`, não zero
+
+Sem envios no período, `0%` seria enganoso (sugere que tudo falhou) e `100%` também.
+`null` diz "não há dados", e o painel decide como exibir.
+
+### Descrição da auditoria montada na leitura
+
+Guardamos `recurso.verbo` + metadados para poder filtrar; a frase legível é construída na
+consulta. Assim, melhorar o texto não exige reescrever histórico — e ele é imutável por
+natureza.
+
+Login **e tentativa recusada** são auditados: uma sequência de recusas é o sinal de que
+alguém está tentando entrar.
+
+### Verificação executada
+
+```
+/admin/metrics/overview        sessões por status, mensagens (hoje/7d/30d),
+                               taxa de entrega, alertas
+série temporal 7 dias          8 pontos, sem lacunas
+hour com 8 meses               422 "o intervalo máximo é de 7 dias"
+por aplicação                  ordenado por volume
+auditoria                      descrições em PT-BR ("Sessão "Ingestao" criada por
+                               sistema-a/k", "QR code solicitado por ... (2ª vez)")
+linha do tempo do recurso      histórico ordenado de uma sessão
+
+SSE:
+  sem token / token lixo       401 com type invalid-token
+  com token válido             recebeu session.status e message.received ao vivo,
+                               poucos segundos após os eventos
+  heartbeat                    1 batimento em 28s
+
+pnpm test                      150 testes
+```

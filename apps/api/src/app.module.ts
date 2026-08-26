@@ -16,7 +16,9 @@ import { ApiKeyGuard } from './modules/api-keys/api-key.guard';
 import { ApiKeyModule } from './modules/api-keys/api-key.module';
 import { ApplicationsModule } from './modules/applications/applications.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { EventsModule } from './modules/events/events.module';
 import { HistoryModule } from './modules/history/history.module';
+import { MetricsModule } from './modules/metrics/metrics.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { WahaModule } from './modules/waha/waha.module';
@@ -63,6 +65,8 @@ import { RedisService } from './redis/redis.service';
     SessionsModule,
     MessagesModule,
     HistoryModule,
+    EventsModule,
+    MetricsModule,
     WebhookIngestModule,
     WebhooksOutModule,
   ],

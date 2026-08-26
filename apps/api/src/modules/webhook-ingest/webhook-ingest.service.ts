@@ -16,6 +16,7 @@ import {
 
 import { PrismaService } from '../../prisma/prisma.service';
 import { mapStatus } from '../sessions/sessions.service';
+import { EventsBus } from '../events/events.bus';
 import { WebhooksOutService } from '../webhooks-out/webhooks-out.service';
 
 import type { Session } from '../../generated/prisma/client';
@@ -44,6 +45,7 @@ export class WebhookIngestService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly webhooks: WebhooksOutService,
+    private readonly bus: EventsBus,
   ) {}
 
   async processar(evento: WahaWebhookEvent): Promise<ResultadoIngestao> {
@@ -194,6 +196,19 @@ export class WebhookIngestService {
     // secundário em relação a ter registrado o evento.
     await this.webhooks.publicar(session.applicationId, 'session.status', { status }, atualizada);
 
+    // Barramento interno: alimenta o SSE do painel e o do integrador.
+    this.bus.publicar({
+      type: 'session.status',
+      applicationId: session.applicationId,
+      sessionId: session.id,
+      data: {
+        status,
+        phoneNumber: atualizada.phoneNumber,
+        pushName: atualizada.pushName,
+        label: atualizada.label,
+      },
+    });
+
     if (status === SessionStatus.WORKING && session.status !== SessionStatus.WORKING) {
       await this.webhooks.publicar(
         session.applicationId,
@@ -260,6 +275,13 @@ export class WebhookIngestService {
         ...(midia?.url ? { mediaUrl: midia.url, mediaMimeType: midia.mimetype ?? null } : {}),
         raw: payload as never,
       },
+    });
+
+    this.bus.publicar({
+      type: fromMe ? 'message.sent' : 'message.received',
+      applicationId: session.applicationId,
+      sessionId: session.id,
+      data: { id: registro.id, chatId, type: registro.type, body: registro.body },
     });
 
     await this.webhooks.publicar(

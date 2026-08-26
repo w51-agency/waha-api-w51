@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
 import { Public } from '../../common/decorators/public.decorator';
+import { AuditService } from '../audit/audit.service';
 
 import { AdminAuthService } from './admin-auth.service';
 import { AdminGuard } from './admin.guard';
@@ -14,7 +15,10 @@ import type { Request } from 'express';
 @ApiTags('Admin')
 @Controller('admin/auth')
 export class AdminAuthController {
-  constructor(private readonly auth: AdminAuthService) {}
+  constructor(
+    private readonly auth: AdminAuthService,
+    private readonly audit: AuditService,
+  ) {}
 
   /**
    * Limite agressivo e por IP: com um único usuário administrativo, o login é o
@@ -26,8 +30,29 @@ export class AdminAuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Entrar no painel' })
-  login(@Body() dto: LoginDto): Promise<LoginResponse> {
-    return this.auth.login(dto.username, dto.password);
+  async login(@Body() dto: LoginDto, @Req() request: Request): Promise<LoginResponse> {
+    try {
+      const resultado = await this.auth.login(dto.username, dto.password);
+
+      await this.audit.admin('admin.login', {
+        username: dto.username,
+        resourceType: 'admin',
+        request,
+      });
+
+      return resultado;
+    } catch (erro) {
+      // Tentativa recusada também é auditada: uma sequência delas é o sinal de
+      // que alguém está tentando entrar.
+      await this.audit.admin('admin.login.failed', {
+        username: dto.username,
+        resourceType: 'admin',
+        metadata: { usernameTentado: dto.username },
+        request,
+      });
+
+      throw erro;
+    }
   }
 
   @Public()
