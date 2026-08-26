@@ -6,7 +6,29 @@
   "scripts": {
     "build": "echo '[api] ainda não implementada (tarefa 04)' && exit 0",
     "dev": "echo '[api] ainda não implementada (tarefa 04)' && exit 0",
-    "typecheck": "echo '[api] ainda não implementada (tarefa 04)' && exit 0",
-    "test": "echo '[api] ainda não implementada (tarefa 04)' && exit 0"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "echo '[api] ainda não implementada (tarefa 04)' && exit 0",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset",
+    "db:status": "prisma migrate status",
+    "db:seed:reset-key": "tsx prisma/reset-seed-key.ts",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@node-rs/argon2": "^2.1.0",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "pg": "^8.23.0",
+    "prisma": "7.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.3.0",
+    "@types/pg": "^8.23.1",
+    "dotenv": "^17.4.2",
+    "tsx": "^4.23.12"
   }
 }

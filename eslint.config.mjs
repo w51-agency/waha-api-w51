@@ -33,7 +33,8 @@ export default tseslint.config(
       'import/resolver': {
         typescript: {
           alwaysTryTypes: true,
-          project: ['./tsconfig.base.json', './*/*/tsconfig.json'],
+          noWarnOnMultipleProjects: true,
+          project: ['./tsconfig.base.json', './apps/*/tsconfig.json', './packages/*/tsconfig.json'],
         },
       },
     },
@@ -66,6 +67,13 @@ export default tseslint.config(
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'prefer-const': 'error',
     },
+  },
+
+  // Scripts de linha de comando (seed, utilitários) existem para falar com o
+  // terminal: console é a saída correta neles, não um descuido.
+  {
+    files: ['**/prisma/*.ts', 'scripts/**/*.ts', '**/*.config.ts'],
+    rules: { 'no-console': 'off' },
   },
 
   prettier,

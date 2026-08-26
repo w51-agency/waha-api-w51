@@ -42,3 +42,5 @@ tmp/
 /tasks
 .plan
 tasks/
+# client do Prisma (gerado; regenerado por `pnpm db:generate` no postinstall)
+apps/api/src/generated/

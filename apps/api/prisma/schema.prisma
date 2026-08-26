@@ -1,0 +1,353 @@
+// =============================================================================
+//  WhatsApp Gateway W51 — modelo de dados
+// =============================================================================
+//  Este schema guarda o que o WAHA não sabe: qual sistema integrador é dono de
+//  cada sessão, qual API key pediu o QR code, o histórico de mensagens atribuído
+//  a cada aplicação e a trilha de auditoria.
+//
+//  As sessões do WhatsApp em si ficam no database "waha", gerenciadas pelo
+//  próprio WAHA. São databases separados no mesmo Postgres — sem colisão.
+//
+//  Princípio central: ISOLAMENTO POR APLICAÇÃO. Tudo que é consultável carrega
+//  applicationId, para que o filtro seja barato e nunca esquecido.
+// =============================================================================
+
+// Generator do Prisma 7: emite o client como código dentro de src/, em vez de
+// escrever em node_modules. Com o node_modules isolado do pnpm, a variante que
+// grava em .prisma/client não resolve na hora do import.
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// A URL de conexão vive em prisma.config.ts (Prisma 7 removeu `url` daqui).
+datasource db {
+  provider = "postgresql"
+}
+
+// =============================================================================
+//  Enums
+// =============================================================================
+
+/// Status de uma sessão de WhatsApp. Espelha os valores emitidos pelo WAHA;
+/// UNKNOWN cobre valores novos que o WAHA venha a introduzir sem nos avisar.
+enum SessionStatus {
+  STOPPED
+  STARTING
+  SCAN_QR_CODE
+  PASSKEY_REQUIRED
+  PASSKEY_CONFIRMATION_REQUIRED
+  WORKING
+  FAILED
+  UNKNOWN
+}
+
+enum Direction {
+  INBOUND
+  OUTBOUND
+}
+
+/// Ciclo de vida de uma mensagem enviada. QUEUED é gravado antes de chamar o
+/// WAHA; os demais vêm da resposta ou dos webhooks de ack.
+enum MessageStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum CreatedVia {
+  API
+  DASHBOARD
+}
+
+enum DeliveryStatus {
+  PENDING
+  RETRYING
+  SUCCESS
+  FAILED
+  ABANDONED
+}
+
+enum ActorType {
+  ADMIN
+  API_KEY
+  SYSTEM
+}
+
+// =============================================================================
+//  Aplicações e credenciais
+// =============================================================================
+
+/// Um sistema integrador que consome o gateway.
+model Application {
+  id          String   @id @default(cuid())
+  name        String
+  /// Usado na composição do nome técnico da sessão no WAHA ({slug}--{nanoid}).
+  /// Imutável após a criação, justamente por isso.
+  slug        String   @unique
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  apiKeys          ApiKey[]
+  sessions         Session[]
+  messages         Message[]
+  webhookEndpoints WebhookEndpoint[]
+
+  @@index([active])
+  @@map("applications")
+}
+
+/// Credencial de acesso à API pública.
+/// Formato entregue ao integrador: wgw_live_{prefix}_{segredo}
+/// Persistimos apenas o prefixo (para o lookup) e o hash argon2id do segredo.
+model ApiKey {
+  id            String @id @default(cuid())
+  applicationId String @map("application_id")
+
+  name String
+  /// Parte pública da chave, indexada: permite localizar o registro em uma
+  /// única query antes de pagar o custo do argon2.
+  prefix String @unique
+  /// argon2id do segredo. O valor em claro existe somente na resposta de
+  /// criação — nem o admin consegue recuperá-lo depois.
+  hash   String
+
+  /// Vazio = todos os escopos. Restringe quando preenchido.
+  scopes String[] @default([])
+
+  lastUsedAt DateTime? @map("last_used_at")
+  expiresAt  DateTime? @map("expires_at")
+  /// Revogação é soft: o histórico precisa continuar apontando para a chave.
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  createdSessions Session[]   @relation("SessionCreatedByApiKey")
+  sentMessages    Message[]   @relation("MessageSentByApiKey")
+
+  @@index([applicationId])
+  @@index([revokedAt])
+  @@map("api_keys")
+}
+
+// =============================================================================
+//  Sessões
+// =============================================================================
+
+/// Uma conexão com um número de WhatsApp, pertencente a uma aplicação.
+model Session {
+  id            String @id @default(cuid())
+  applicationId String @map("application_id")
+
+  /// Nome técnico no WAHA: {slug}--{nanoid}. Gerado por nós, nunca escolhido
+  /// pelo integrador, e nunca reutilizado após exclusão.
+  name  String  @unique
+  /// Apelido humano, escolhido pelo integrador.
+  label String?
+
+  status SessionStatus @default(STARTING)
+  engine String        @default("NOWEB")
+
+  /// Preenchidos quando a sessão conecta, a partir do me.id do webhook
+  /// session.status=WORKING. É aqui que o vínculo sistema <-> número se fecha.
+  phoneNumber String? @map("phone_number")
+  waId        String? @map("wa_id")
+  pushName    String? @map("push_name")
+
+  /// Rastreio de origem do QR code — o requisito central do projeto.
+  qrRequestCount    Int       @default(0) @map("qr_request_count")
+  lastQrRequestedAt DateTime? @map("last_qr_requested_at")
+
+  connectedAt    DateTime? @map("connected_at")
+  disconnectedAt DateTime? @map("disconnected_at")
+  lastStatusAt   DateTime? @map("last_status_at")
+
+  createdByApiKeyId String?    @map("created_by_api_key_id")
+  createdVia        CreatedVia @default(API) @map("created_via")
+
+  /// Segredo de HMAC próprio desta sessão, usado para verificar os webhooks
+  /// que o WAHA entrega. Por sessão, para que o comprometimento de um não
+  /// afete os demais.
+  webhookSecret String @map("webhook_secret")
+
+  /// Metadados livres do integrador.
+  meta Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  /// SetNull: revogar a chave não pode apagar o histórico de quem criou a sessão.
+  createdByApiKey ApiKey?     @relation("SessionCreatedByApiKey", fields: [createdByApiKeyId], references: [id], onDelete: SetNull)
+  messages        Message[]
+
+  @@unique([applicationId, label])
+  @@index([applicationId, status])
+  @@index([status])
+  @@index([phoneNumber])
+  @@map("sessions")
+}
+
+// =============================================================================
+//  Mensagens
+// =============================================================================
+
+model Message {
+  id            String @id @default(cuid())
+  applicationId String @map("application_id")
+  sessionId     String @map("session_id")
+
+  /// Id da mensagem no WhatsApp. Nulo enquanto o envio está QUEUED.
+  wahaId String? @map("waha_id")
+
+  direction Direction
+  chatId    String    @map("chat_id")
+  fromMe    Boolean   @default(false) @map("from_me")
+  type      String    @default("text")
+
+  body          String? @db.Text
+  mediaUrl      String? @map("media_url")
+  mediaMimeType String? @map("media_mime_type")
+  mediaSize     Int?    @map("media_size")
+
+  /// Confirmação do WhatsApp: -1 erro, 0 pendente, 1 servidor, 2 dispositivo,
+  /// 3 lida, 4 reproduzida.
+  ack     Int?
+  ackName String? @map("ack_name")
+
+  status MessageStatus @default(QUEUED)
+  error  String?       @db.Text
+
+  sentByApiKeyId String? @map("sent_by_api_key_id")
+
+  timestamp DateTime
+  /// Payload cru do WAHA, para depurar diferenças de formato do NOWEB.
+  raw       Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  application  Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  session      Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sentByApiKey ApiKey?     @relation("MessageSentByApiKey", fields: [sentByApiKeyId], references: [id], onDelete: SetNull)
+
+  /// Trava contra duplicata na reentrega de webhook — o WAHA retenta até 15x.
+  @@unique([sessionId, wahaId])
+  @@index([applicationId, timestamp(sort: Desc)])
+  @@index([sessionId, timestamp(sort: Desc)])
+  @@index([chatId, timestamp(sort: Desc)])
+  @@index([status])
+  @@map("messages")
+}
+
+// =============================================================================
+//  Webhooks de saída (gateway -> integrador)
+// =============================================================================
+
+model WebhookEndpoint {
+  id            String @id @default(cuid())
+  applicationId String @map("application_id")
+
+  url    String
+  /// Segredo do HMAC-SHA256 da assinatura. Exibido uma única vez.
+  secret String
+  /// ["*"] recebe tudo.
+  events String[] @default(["*"])
+
+  active      Boolean @default(true)
+  description String?
+
+  /// Contador para o desligamento automático após falhas seguidas.
+  consecutiveFailures Int       @default(0) @map("consecutive_failures")
+  disabledAt          DateTime? @map("disabled_at")
+  disabledReason      String?   @map("disabled_reason")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  application Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  deliveries  WebhookDelivery[]
+
+  @@index([applicationId, active])
+  @@map("webhook_endpoints")
+}
+
+model WebhookDelivery {
+  id         String @id @default(cuid())
+  endpointId String @map("endpoint_id")
+
+  eventId   String @map("event_id")
+  eventType String @map("event_type")
+  payload   Json
+
+  attempts Int            @default(0)
+  status   DeliveryStatus @default(PENDING)
+
+  responseStatus Int?    @map("response_status")
+  responseBody   String? @map("response_body") @db.Text
+  error          String? @db.Text
+  durationMs     Int?    @map("duration_ms")
+
+  nextRetryAt DateTime? @map("next_retry_at")
+  deliveredAt DateTime? @map("delivered_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  /// A fila varre por aqui.
+  @@index([status, nextRetryAt])
+  @@index([endpointId, createdAt(sort: Desc)])
+  @@map("webhook_deliveries")
+}
+
+// =============================================================================
+//  Idempotência e auditoria
+// =============================================================================
+
+/// Trava de idempotência da ingestão de webhooks do WAHA.
+/// Sem ela, uma reentrega vira registro duplicado.
+model InboundEvent {
+  id          String   @id @default(cuid())
+  wahaEventId String   @unique @map("waha_event_id")
+  eventType   String   @map("event_type")
+  sessionName String   @map("session_name")
+  receivedAt  DateTime @default(now()) @map("received_at")
+
+  /// Expurgo periódico varre por aqui.
+  @@index([receivedAt])
+  @@map("inbound_events")
+}
+
+/// Trilha de auditoria transversal. Responde, meses depois, "quem conectou
+/// este número e quando".
+model AuditLog {
+  id String @id @default(cuid())
+
+  actorType  ActorType
+  actorId    String?   @map("actor_id")
+  /// Rótulo legível preservado no momento do registro — sobrevive à exclusão
+  /// do ator, que é justamente quando a auditoria mais importa.
+  actorLabel String?   @map("actor_label")
+
+  /// Padrão recurso.verbo: session.qr.requested, apikey.revoked, ...
+  action String
+
+  resourceType String? @map("resource_type")
+  resourceId   String? @map("resource_id")
+
+  ip        String?
+  userAgent String? @map("user_agent")
+  metadata  Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt(sort: Desc)])
+  @@index([resourceType, resourceId])
+  @@index([action])
+  @@index([actorType, actorId])
+  @@map("audit_logs")
+}
