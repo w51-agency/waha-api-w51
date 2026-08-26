@@ -13,6 +13,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
 import { RedisService } from './redis/redis.service';
 import { AccountModule } from './modules/account/account.module';
+import { AdminAuthModule } from './modules/admin-auth/admin-auth.module';
 import { ApiKeyGuard } from './modules/api-keys/api-key.guard';
 import { ApiKeyModule } from './modules/api-keys/api-key.module';
 
@@ -45,6 +46,7 @@ import { ApiKeyModule } from './modules/api-keys/api-key.module';
     HealthModule,
     ApiKeyModule,
     AccountModule,
+    AdminAuthModule,
   ],
   controllers: [AppController],
   providers: [
