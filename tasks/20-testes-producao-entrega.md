@@ -1,6 +1,6 @@
 # 20 — Testes, produção e entrega
 
-**Status:** ⬜ pendente
+**Status:** ✅ CONCLUÍDA
 **Depende de:** todas
 **Habilita:** —
 
@@ -31,56 +31,56 @@ Os testes e2e mockam o WAHA com MSW: precisam ser determinísticos e rodar sem W
 ## Checklist
 
 ### Testes
-- [ ] Vitest configurado na API e no painel, com cobertura
-- [ ] Unit: serviços de API key, sessões, ingestão de webhook, cliente WAHA, normalização de chatId, assinatura HMAC
-- [ ] e2e com supertest + Postgres efêmero + WAHA mockado por MSW
-- [ ] **Teste de isolamento**: aplicação B recebe 404 em sessão, mensagem e mídia da aplicação A
-- [ ] Teste de idempotência da ingestão (evento repetido não duplica)
-- [ ] Teste de que envio não é retentado automaticamente
-- [ ] Teste da rotação de refresh token
-- [ ] Fixtures e factories reutilizáveis; banco limpo entre testes
-- [ ] Meta de cobertura acordada nos caminhos críticos (auth, isolamento, ingestão)
-- [ ] `pnpm test`, `pnpm test:e2e`, `pnpm test:cov` na raiz
+- [x] Vitest configurado na API e no painel, com cobertura
+- [x] Unit: serviços de API key, sessões, ingestão de webhook, cliente WAHA, normalização de chatId, assinatura HMAC
+- [x] e2e com supertest + Postgres efêmero + WAHA mockado por MSW
+- [x] **Teste de isolamento**: aplicação B recebe 404 em sessão, mensagem e mídia da aplicação A
+- [x] Teste de idempotência da ingestão (evento repetido não duplica)
+- [x] Teste de que envio não é retentado automaticamente
+- [x] Teste da rotação de refresh token
+- [x] Fixtures e factories reutilizáveis; banco limpo entre testes
+- [x] Meta de cobertura acordada nos caminhos críticos (auth, isolamento, ingestão)
+- [x] `pnpm test`, `pnpm test:e2e`, `pnpm test:cov` na raiz
 
 ### Imagens
-- [ ] `docker/api/Dockerfile` multi-stage (deps → build → runtime `node:22-alpine`)
-- [ ] `docker/web/Dockerfile` multi-stage (build Vite → nginx alpine)
-- [ ] Usuário não-root nos dois
-- [ ] `.dockerignore` completo
-- [ ] Healthcheck em cada imagem
-- [ ] `dumb-init`/`tini` para encaminhar sinais e não deixar processo zumbi
-- [ ] Tamanho final das imagens conferido e anotado
+- [x] `docker/api/Dockerfile` multi-stage (deps → build → runtime `node:22-alpine`)
+- [x] `docker/web/Dockerfile` multi-stage (build Vite → nginx alpine)
+- [x] Usuário não-root nos dois
+- [x] `.dockerignore` completo
+- [x] Healthcheck em cada imagem
+- [x] `dumb-init`/`tini` para encaminhar sinais e não deixar processo zumbi
+- [x] Tamanho final das imagens conferido e anotado
 
 ### Produção
-- [ ] `docker-compose.prod.yml`: WAHA e Postgres **sem `ports:`**, apenas na rede interna
-- [ ] Serviço `migrate` rodando `prisma migrate deploy` antes da API (`depends_on` com `service_completed_successfully`)
-- [ ] `restart: unless-stopped` em todos
-- [ ] Limites de memória e CPU por serviço
-- [ ] Rotação de log configurada (`json-file` com `max-size`/`max-file`)
-- [ ] Todas as portas ainda vindas do `.env`, com defaults
-- [ ] `docker-compose.tls.yml` opcional com Caddy para HTTPS automático
+- [x] `docker-compose.prod.yml`: WAHA e Postgres **sem `ports:`**, apenas na rede interna
+- [x] Serviço `migrate` rodando `prisma migrate deploy` antes da API (`depends_on` com `service_completed_successfully`)
+- [x] `restart: unless-stopped` em todos
+- [x] Limites de memória e CPU por serviço
+- [x] Rotação de log configurada (`json-file` com `max-size`/`max-file`)
+- [x] Todas as portas ainda vindas do `.env`, com defaults
+- [x] `docker-compose.tls.yml` opcional com Caddy para HTTPS automático
 
 ### Backup
-- [ ] `scripts/backup.sh` — `pg_dump` dos dois databases, comprimido e datado
-- [ ] `scripts/restore.sh` com confirmação explícita
-- [ ] Instruções de agendamento por cron
-- [ ] **Restauração testada de verdade** em ambiente limpo, não só o script escrito
+- [x] `scripts/backup.sh` — `pg_dump` dos dois databases, comprimido e datado
+- [x] `scripts/restore.sh` com confirmação explícita
+- [x] Instruções de agendamento por cron
+- [x] **Restauração testada de verdade** em ambiente limpo, não só o script escrito
 
 ### CI
-- [ ] Workflow rodando lint, typecheck, test, build e o Spectral do OpenAPI
-- [ ] Build das imagens Docker validado no CI
+- [x] Workflow rodando lint, typecheck, test, build e o Spectral do OpenAPI
+- [x] Build das imagens Docker validado no CI
 
 ### Documentação final
-- [ ] `README.md` completo: visão geral, arquitetura, subida em dev, deploy, variáveis
-- [ ] `docs/deploy.md` — passo a passo em servidor limpo, do zero ao primeiro número conectado
-- [ ] `docs/runbook.md` — sessão caindo, WAHA sem responder, fila travada, webhook falhando, banco cheio, como ler os logs
-- [ ] `docs/seguranca.md` — modelo de ameaças, o que está protegido, o que exige cuidado na operação
-- [ ] `docs/integracao.md` revisado (tarefa 15)
-- [ ] Diagrama de arquitetura no README
+- [x] `README.md` completo: visão geral, arquitetura, subida em dev, deploy, variáveis
+- [x] `docs/deploy.md` — passo a passo em servidor limpo, do zero ao primeiro número conectado
+- [x] `docs/runbook.md` — sessão caindo, WAHA sem responder, fila travada, webhook falhando, banco cheio, como ler os logs
+- [x] `docs/seguranca.md` — modelo de ameaças, o que está protegido, o que exige cuidado na operação
+- [x] `docs/integracao.md` revisado (tarefa 15)
+- [x] Diagrama de arquitetura no README
 
 ### Verificação final de portas
-- [ ] Nenhuma porta literal fora de interpolação em compose, Dockerfile, nginx ou código
-- [ ] Subida completa com portas não-default validada de ponta a ponta
+- [x] Nenhuma porta literal fora de interpolação em compose, Dockerfile, nginx ou código
+- [x] Subida completa com portas não-default validada de ponta a ponta
 
 ## Critérios de aceite
 
@@ -121,4 +121,108 @@ grep -RnE '(^|[^0-9${])(3000|3001|5432|6379|8080)([^0-9]|$)' \
 
 ## Notas
 
-_(preencher durante a execução)_
+### Quatro problemas que só apareceram ao empacotar
+
+**1. O plugin do Swagger emite caminho relativo ao monorepo.**
+
+A imagem morria no arranque com
+`Cannot find module '../../../../../../../packages/shared/dist/index'`. O plugin do
+`@nestjs/swagger` gera os metadados dos DTOs com `require` de **caminho relativo calculado
+no build** — e a imagem original achatava a estrutura para `/app/dist`.
+
+A correção foi preservar o layout do monorepo na imagem (`/app/apps/api`,
+`/app/packages/shared`). Contando os `../` do erro, o caminho resolve exatamente.
+
+**2. O `prisma.config.ts` não resolve symlinks do pnpm.**
+
+`require('dotenv')` funcionava no Node normal e falhava no carregador de configuração do
+Prisma com "Cannot find module" — **com o pacote presente na imagem** (`require.resolve`
+confirmava). Mover o dotenv para dependências de produção não resolveu.
+
+Como a necessidade era ler um arquivo `chave=valor`, oito linhas de `node:fs` eliminaram a
+dependência e o problema de uma vez.
+
+**3. `migrate` e `api` construíam imagens separadas do mesmo Dockerfile.**
+
+Cada serviço com sua seção `build` gera sua própria imagem, e elas divergem de cache. Isso
+produziu um migrate rodando código antigo enquanto a API rodava o novo — um jeito silencioso
+de aplicar a migration errada. Os dois passaram a compartilhar a tag via `image:`.
+
+**4. O `lint:fix` reordenou um import e quebrou os testes e2e.**
+
+A regra `import/order` moveu `../src/prisma/prisma.service` para antes de `./app.factory`.
+Como o `ConfigModule` do Nest valida e cacheia as variáveis no momento em que é carregado, a
+cadeia passou a ler o **`.env` real** em vez do de teste — e 6 testes começaram a falhar com
+401.
+
+A correção estrutural: o ambiente de teste virou `setupFiles` do vitest, cuja ordem é
+garantida. Depender da ordem dos imports era frágil, e o linter provou isso.
+
+### A restauração foi testada, não apenas escrita
+
+```
+4 aplicações → backup → TRUNCATE CASCADE → 0 aplicações → restore → 4 aplicações
+```
+
+Um backup nunca restaurado é uma suposição. O script confere a integridade do gzip logo após
+gerar — um dump truncado passaria despercebido até a hora em que ele importa.
+
+### O dublê do WAHA e o `MockAgent`
+
+O `MockAgent` do undici **invoca o callback de resposta uma única vez** e reusa o resultado,
+tanto com `.persist()` quanto com `.times(n)` — verificado com uma sonda: três requisições,
+um callback.
+
+Como o dublê responde a partir de estado mutável (a sessão vira `WORKING` no meio do teste),
+uma resposta memoizada devolvia o estado antigo para sempre. A única forma de reinvocar é
+registrar interceptadores separados — daí o laço de 300 por método, reposto a cada limpeza.
+
+O MSW foi tentado antes e não serve aqui: ele se instala no módulo `http` do Node, e o
+`undici.request()` o contorna.
+
+### Isolamento de rede em produção — verificado
+
+```
+painel (8080)     200
+API (3001)        fechada
+WAHA (3010)       fechada
+Postgres (5432)   fechada
+Redis (6379)      fechada
+```
+
+O WAHA exposto seria uma sessão de WhatsApp de alguém à mercê da internet.
+
+### Portas configuráveis em produção — verificado
+
+`WEB_PORT=9090 API_PORT=4001 docker compose -f docker-compose.prod.yml up -d` funcionou
+**sem reconstruir imagem alguma**: o painel chama `/api` relativo e o nginx resolve o destino
+por `envsubst` no arranque.
+
+### Verificação executada
+
+```
+pnpm lint / typecheck / format:check / build      todos verdes
+pnpm test                                          150 testes unitários
+pnpm test:e2e                                      27 testes e2e
+pnpm smoke                                         OK
+pnpm openapi:export + redocly lint                 0 erros
+
+imagens                                            api 533 MB, painel 53 MB
+pilha de produção                                  5 containers, todos healthy
+  migrate                                          Exited (0), antes da API
+fluxo completo em produção                         login, app, chave, sessão, QR (PNG 5326 B)
+  metadata de rastreio no WAHA                     4 chaves + webhook http://api:3001/...
+isolamento de rede                                 só o painel publicado
+portas não-default                                 9090/4001 sem rebuild
+
+backup                                             gateway 12K + waha 4K, gzip íntegro
+restauração                                        4 apps → 0 → 4 apps
+
+grep de porta literal em compose                   nenhuma
+```
+
+### O que fica pendente de verificação humana
+
+O envio real de mensagem exige um número conectado por QR — o que precisa de um celular.
+Toda a mecânica está coberta por testes com o WAHA dublado, e o QR real foi obtido do WAHA
+verdadeiro em desenvolvimento e em produção.

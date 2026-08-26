@@ -33,7 +33,22 @@ objetivo, contexto, checklist e critérios de aceite executáveis.
 | [17](17-painel-sessoes-qr.md) | Painel — sessões e QR ao vivo | ✅ concluída |
 | [18](18-painel-mensagens-metricas.md) | Painel — mensagens e métricas | ✅ concluída |
 | [19](19-painel-apps-chaves-auditoria.md) | Painel — apps, chaves, webhooks e auditoria | ✅ concluída |
-| [20](20-testes-producao-entrega.md) | Testes, produção e entrega | ⬜ pendente |
+| [20](20-testes-producao-entrega.md) | Testes, produção e entrega | ✅ concluída |
+
+## Estado
+
+**20 de 20 tarefas concluídas.** O sistema está completo e verificado:
+
+```
+pnpm lint / typecheck / format:check / build   verdes
+pnpm test        150 testes unitários
+pnpm test:e2e     27 testes e2e
+pnpm smoke        a aplicação sobe e responde
+redocly lint      0 erros na especificação OpenAPI
+
+produção          5 containers healthy, só o painel publicado
+backup            restauração testada de verdade
+```
 
 ## Convenções do projeto
 
