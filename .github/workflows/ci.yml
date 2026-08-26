@@ -1,0 +1,157 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancela execuções antigas do mesmo branch: revisar o resultado de um commit
+# que já foi substituído não ajuda ninguém.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualidade:
+    name: Lint, tipos e testes
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: gateway
+          POSTGRES_PASSWORD: senha-de-ci
+          POSTGRES_DB: gateway
+        options: >-
+          --health-cmd "pg_isready -U gateway"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports: ['5432:5432']
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+        ports: ['6379:6379']
+
+    env:
+      DATABASE_URL: postgresql://gateway:senha-de-ci@localhost:5432/gateway?schema=public
+      REDIS_URL: redis://localhost:6379
+      POSTGRES_USER: gateway
+      POSTGRES_PASSWORD: senha-de-ci
+      POSTGRES_DB: gateway
+      # Valores de teste: a validação do ambiente exige 32+ caracteres nos
+      # segredos, e o CI precisa passar por ela como qualquer outra execução.
+      JWT_SECRET: ci-jwt-secret-com-tamanho-suficiente-aqui
+      JWT_REFRESH_SECRET: ci-refresh-secret-com-tamanho-suficiente
+      WAHA_WEBHOOK_HMAC_KEY: ci-hmac-key-com-tamanho-mais-que-suficiente
+      ADMIN_PASSWORD: senha-de-teste-bem-longa
+      WAHA_BASE_URL: http://waha-mock.invalid:3000
+      WAHA_API_KEY: chave-do-waha-de-teste
+      GATEWAY_INTERNAL_URL: http://localhost:3001
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Formatação
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Tipos
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm -r build
+
+      - name: Testes unitários
+        run: pnpm --filter @gateway/api test
+
+      - name: Preparar banco de teste
+        run: |
+          PGPASSWORD=senha-de-ci psql -h localhost -U gateway -d postgres \
+            -c "CREATE DATABASE gateway_test;"
+          cd apps/api
+          DATABASE_URL="postgresql://gateway:senha-de-ci@localhost:5432/gateway_test?schema=public" \
+            pnpm exec prisma migrate deploy
+
+      - name: Testes e2e
+        run: cd apps/api && pnpm exec vitest run --config vitest.e2e.mts
+
+      - name: Especificação OpenAPI
+        run: |
+          cd apps/api && SWAGGER_ENABLED=true pnpm openapi:export
+          cd ../.. && node scripts/gen-collections.mjs
+
+      - name: Validar OpenAPI
+        run: npx --yes @redocly/cli@latest lint docs/openapi.json
+
+      # A especificação é versionada. Se ela mudou e não foi commitada, o
+      # contrato publicado diverge do código — e quem integra usa o antigo.
+      - name: A especificação está atualizada?
+        run: |
+          if ! git diff --quiet docs/openapi.json; then
+            echo "::error::docs/openapi.json está desatualizado. Rode 'pnpm openapi:export' e faça o commit."
+            git diff --stat docs/openapi.json
+            exit 1
+          fi
+
+  imagens:
+    name: Imagens Docker
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Imagem da API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/api/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Imagem do painel
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/web/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  portas:
+    name: Nenhuma porta fixa
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # A regra do projeto: toda porta vem do .env, com default interpolado.
+      # Uma porta literal que escape aqui só apareceria quando alguém tentasse
+      # trocá-la em produção.
+      - name: Verificar portas literais
+        run: |
+          if grep -rnE "['\"][0-9.]*:?[0-9]+:[0-9]+['\"]" docker-compose*.yml | grep -v '\${'; then
+            echo "::error::Porta literal fora de interpolação em docker-compose"
+            exit 1
+          fi
+          echo "Nenhuma porta fixa encontrada."

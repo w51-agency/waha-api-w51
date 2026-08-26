@@ -57,19 +57,28 @@ export class WahaClient {
   private readonly apiKey: string;
   private readonly timeoutPadrao: number;
 
-  /** Pool com keep-alive: sem ele, cada chamada pagaria um handshake TCP. */
-  private readonly agent: Agent;
+  /**
+   * Pool com keep-alive: sem ele, cada chamada pagaria um handshake TCP.
+   *
+   * Fica `undefined` em ambiente de teste. O undici, quando recebe um
+   * `dispatcher` explícito, ignora o global — e é justamente o global que o MSW
+   * substitui para interceptar. Sem essa concessão, os testes e2e não
+   * conseguiriam dublar o WAHA.
+   */
+  private readonly agent: Agent | undefined;
 
   constructor(private readonly config: AppConfig) {
     this.baseUrl = config.get('WAHA_BASE_URL').replace(/\/+$/, '');
     this.apiKey = config.get('WAHA_API_KEY');
     this.timeoutPadrao = config.get('WAHA_TIMEOUT_MS');
 
-    this.agent = new Agent({
-      keepAliveTimeout: 30_000,
-      keepAliveMaxTimeout: 60_000,
-      connections: 32,
-    });
+    this.agent = config.isTest
+      ? undefined
+      : new Agent({
+          keepAliveTimeout: 30_000,
+          keepAliveMaxTimeout: 60_000,
+          connections: 32,
+        });
   }
 
   // ===========================================================================

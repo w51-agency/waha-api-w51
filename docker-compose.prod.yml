@@ -1,0 +1,236 @@
+# =============================================================================
+#  WhatsApp Gateway W51 — produção
+# =============================================================================
+#  Diferenças em relação ao compose de desenvolvimento, e o motivo de cada uma:
+#
+#  - WAHA, Postgres e Redis NÃO publicam porta. Só existem na rede interna. Um
+#    WAHA exposto é uma sessão de WhatsApp de alguém à mercê da internet.
+#  - As migrations rodam em um serviço próprio (`migrate deploy`, nunca
+#    `migrate dev`), que precisa terminar antes de a API subir.
+#  - Limites de memória e CPU declarados: uma sessão problemática não pode
+#    consumir o host inteiro.
+#  - Rotação de log configurada: sem isso, o disco enche em semanas.
+#
+#  Todas as portas continuam vindo do .env.
+# =============================================================================
+
+name: waha-gateway-w51
+
+x-log: &log
+  driver: json-file
+  options:
+    max-size: '20m'
+    max-file: '5'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gateway}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-gateway}
+      WAHA_POSTGRES_DB: ${WAHA_POSTGRES_DB:-waha}
+      TZ: ${TZ:-America/Sao_Paulo}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/10-init-databases.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-gateway} -d ${POSTGRES_DB:-gateway}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    logging: *log
+    networks: [interna]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory-policy noeviction
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    logging: *log
+    networks: [interna]
+
+  waha:
+    image: ${WAHA_IMAGE:-devlikeapro/waha:noweb-2026.8.1}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      WHATSAPP_DEFAULT_ENGINE: ${WHATSAPP_DEFAULT_ENGINE:-NOWEB}
+      WAHA_API_KEY: ${WAHA_API_KEY:?defina WAHA_API_KEY}
+      WHATSAPP_API_KEY_EXCLUDE_PATH: /health
+      WAHA_DASHBOARD_ENABLED: 'false'
+      WHATSAPP_SWAGGER_ENABLED: 'false'
+      WHATSAPP_SESSIONS_POSTGRESQL_URL: postgresql://${POSTGRES_USER:-gateway}:${POSTGRES_PASSWORD}@postgres:5432/${WAHA_POSTGRES_DB:-waha}?sslmode=disable
+      WHATSAPP_RESTART_ALL_SESSIONS: 'true'
+      WHATSAPP_DOWNLOAD_MEDIA: 'true'
+      WHATSAPP_FILES_FOLDER: /app/media
+      WHATSAPP_FILES_LIFETIME: '0'
+      WAHA_BASE_URL: http://waha:3000
+      WAHA_LOG_FORMAT: JSON
+      WAHA_LOG_LEVEL: ${WAHA_LOG_LEVEL:-info}
+      # Nada de QR no log em produção: ele é uma credencial de conexão.
+      WAHA_PRINT_QR: 'false'
+      WAHA_CLIENT_DEVICE_NAME: ${WAHA_CLIENT_DEVICE_NAME:-Gateway W51}
+      TZ: ${TZ:-America/Sao_Paulo}
+    volumes:
+      - wahamedia:/app/media
+      - wahasessions:/app/.sessions
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:3000/health >/dev/null || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: ${WAHA_MEMORY_LIMIT:-2g}
+    logging: *log
+    networks: [interna]
+
+  # Serviço efêmero: aplica as migrations e encerra. A API só sobe depois que
+  # ele termina com sucesso — subir com o schema desatualizado produziria erros
+  # de coluna inexistente no meio do tráfego.
+  migrate:
+    # Mesma imagem da API, com tag explícita: sem isso, o compose constrói duas
+    # imagens do mesmo Dockerfile e elas podem divergir de cache — o migrate
+    # rodando código antigo enquanto a API roda o novo, que é um jeito
+    # silencioso de aplicar a migration errada.
+    image: ${GATEWAY_API_IMAGE:-waha-gateway-w51-api:local}
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    restart: 'no'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-gateway}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-gateway}?schema=public
+    entrypoint: ['/sbin/tini', '--']
+    # O prisma local, não npx: a imagem já o traz como dependência de produção,
+    # e o npx baixaria o pacote da rede a cada deploy.
+    command: ['node_modules/.bin/prisma', 'migrate', 'deploy']
+    logging: *log
+    networks: [interna]
+
+  api:
+    image: ${GATEWAY_API_IMAGE:-waha-gateway-w51-api:local}
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      waha:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      API_PORT: ${API_PORT:-3001}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: json
+      TZ: ${TZ:-America/Sao_Paulo}
+
+      DATABASE_URL: postgresql://${POSTGRES_USER:-gateway}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-gateway}?schema=public
+      REDIS_URL: redis://redis:6379
+
+      WAHA_BASE_URL: http://waha:3000
+      WAHA_API_KEY: ${WAHA_API_KEY}
+      WAHA_WEBHOOK_HMAC_KEY: ${WAHA_WEBHOOK_HMAC_KEY:?defina WAHA_WEBHOOK_HMAC_KEY}
+      # Em produção a API é um container, então o WAHA a alcança pelo nome do
+      # serviço — não por host.docker.internal, que é coisa de desenvolvimento.
+      GATEWAY_INTERNAL_URL: http://api:${API_PORT:-3001}
+      WHATSAPP_DEFAULT_ENGINE: ${WHATSAPP_DEFAULT_ENGINE:-NOWEB}
+
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?defina ADMIN_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?defina JWT_REFRESH_SECRET}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
+      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-7d}
+
+      API_KEY_PREFIX: ${API_KEY_PREFIX:-wgw_live}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      BODY_LIMIT: ${BODY_LIMIT:-25mb}
+      RATE_LIMIT_TTL: ${RATE_LIMIT_TTL:-60}
+      RATE_LIMIT_LIMIT: ${RATE_LIMIT_LIMIT:-120}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-true}
+
+      MAX_SESSIONS_PER_APP: ${MAX_SESSIONS_PER_APP:-0}
+      MAX_MEDIA_SIZE_MB: ${MAX_MEDIA_SIZE_MB:-16}
+      MAX_PAGE_SIZE: ${MAX_PAGE_SIZE:-100}
+      SESSION_SYNC_INTERVAL: ${SESSION_SYNC_INTERVAL:-60}
+      WEBHOOK_TOLERANCE_SECONDS: ${WEBHOOK_TOLERANCE_SECONDS:-300}
+      WEBHOOK_TIMEOUT_MS: ${WEBHOOK_TIMEOUT_MS:-10000}
+      WEBHOOK_MAX_ATTEMPTS: ${WEBHOOK_MAX_ATTEMPTS:-6}
+      WEBHOOK_FAILURE_THRESHOLD: ${WEBHOOK_FAILURE_THRESHOLD:-20}
+      AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-180}
+      # Em produção os webhooks exigem HTTPS e endereço público.
+      ALLOW_INSECURE_WEBHOOKS: 'false'
+    deploy:
+      resources:
+        limits:
+          memory: ${API_MEMORY_LIMIT:-768m}
+    logging: *log
+    networks: [interna]
+
+  web:
+    image: ${GATEWAY_WEB_IMAGE:-waha-gateway-w51-web:local}
+    build:
+      context: .
+      dockerfile: docker/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_HOST: api
+      API_PORT: ${API_PORT:-3001}
+      WEB_INTERNAL_PORT: 80
+      BODY_LIMIT: ${BODY_LIMIT:-25mb}
+      TZ: ${TZ:-America/Sao_Paulo}
+    ports:
+      # O único serviço publicado. Coloque um proxy com TLS na frente para
+      # expor à internet — o painel trafega credenciais.
+      - '${BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-8080}:80'
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+    logging: *log
+    networks: [interna]
+
+volumes:
+  pgdata:
+  redisdata:
+  wahamedia:
+  wahasessions:
+
+networks:
+  interna:
+    driver: bridge
