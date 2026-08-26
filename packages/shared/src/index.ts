@@ -1,3 +1,5 @@
+export * from './waha/types';
+
 /**
  * Tipos e enums compartilhados entre a API (apps/api) e o painel (apps/web).
  *
