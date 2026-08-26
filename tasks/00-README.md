@@ -26,7 +26,7 @@ objetivo, contexto, checklist e critérios de aceite executáveis.
 | [10](10-ingestao-webhooks-waha.md) | Ingestão de webhooks do WAHA | ✅ concluída |
 | [11](11-envio-mensagens.md) | Envio de mensagens (texto e mídia) | ✅ concluída |
 | [12](12-historico-chats-midia.md) | Histórico, chats e proxy de mídia | ✅ concluída |
-| [13](13-webhooks-saida.md) | Webhooks de saída para integradores | ⬜ pendente |
+| [13](13-webhooks-saida.md) | Webhooks de saída para integradores | ✅ concluída |
 | [14](14-metricas-auditoria-sse.md) | Métricas, auditoria e SSE | ⬜ pendente |
 | [15](15-documentacao-openapi.md) | Documentação OpenAPI completa | ⬜ pendente |
 | [16](16-painel-fundacao.md) | Painel — fundação | ⬜ pendente |

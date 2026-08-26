@@ -1,12 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
+import { API_SCOPE_LABELS } from '@gateway/shared';
+
 import { CurrentApiKey } from '../../common/decorators/current-app.decorator';
 import { AuthenticatedApiKey } from '../api-keys/api-key.types';
 
 import { AccountResponse } from './dto/account.response';
-
-import { API_SCOPE_LABELS } from '@gateway/shared';
 
 @ApiTags('Conta')
 @ApiSecurity('ApiKeyAuth')

@@ -1,13 +1,14 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
+import { API_SCOPE_LABELS, type ApiScope } from '@gateway/shared';
+
 import { IS_PUBLIC_KEY } from '../../common/decorators/public.decorator';
 import { SCOPES_KEY } from '../../common/decorators/scopes.decorator';
 import { ForbiddenError, UnauthorizedError } from '../../common/errors/problem-details';
 
 import { ApiKeyService } from './api-key.service';
 
-import { API_SCOPE_LABELS, type ApiScope } from '@gateway/shared';
 import type { Request } from 'express';
 
 /**

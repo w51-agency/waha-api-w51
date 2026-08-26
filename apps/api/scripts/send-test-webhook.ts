@@ -1,8 +1,7 @@
 import { createHmac, randomUUID } from 'node:crypto';
 
-import { config } from 'dotenv';
-
 import { PrismaPg } from '@prisma/adapter-pg';
+import { config } from 'dotenv';
 
 import { PrismaClient } from '../src/generated/prisma/client';
 

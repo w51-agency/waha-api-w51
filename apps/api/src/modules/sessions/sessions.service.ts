@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { customAlphabet } from 'nanoid';
 
+import { SESSION_STATUS_LABELS, SessionStatus, type WahaSessionStatus } from '@gateway/shared';
+
 import { generateSecret } from '../../common/crypto/api-key.crypto';
 import { ConflictError, NotFoundError } from '../../common/errors/problem-details';
 import { AppConfig } from '../../config';
@@ -11,11 +13,9 @@ import { WahaSessionNotFoundError } from '../waha/waha.errors';
 
 import type { CreateSessionDto, ListSessionsQuery, UpdateSessionDto } from './dto/session.dto';
 import type { QrCodeResponse, SessionResponse } from './dto/session.response';
-import type { AuthenticatedApiKey } from '../api-keys/api-key.types';
 import type { Session } from '../../generated/prisma/client';
+import type { AuthenticatedApiKey } from '../api-keys/api-key.types';
 import type { Request } from 'express';
-
-import { SESSION_STATUS_LABELS, SessionStatus, type WahaSessionStatus } from '@gateway/shared';
 
 /** Alfabeto sem caracteres ambíguos — o nome aparece em log e em URL. */
 const nanoid = customAlphabet('23456789abcdefghijkmnpqrstuvwxyz', 8);

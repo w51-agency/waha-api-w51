@@ -46,7 +46,22 @@ function isEnderecoInterno(ip: string): boolean {
   );
 }
 
-export async function assertUrlDeMidiaSegura(url: string): Promise<URL> {
+export interface OpcoesValidacaoUrl {
+  /**
+   * Permite endereços privados e loopback.
+   *
+   * Existe **apenas** para desenvolvimento de webhooks, onde o receptor de teste
+   * roda em `localhost`. Nunca deve ser ligado para mídia: aquela URL é buscada
+   * pelo WAHA, que roda dentro da nossa rede, e liberar endereços internos ali
+   * seria SSRF direto. Controlado por `ALLOW_INSECURE_WEBHOOKS`.
+   */
+  permitirEnderecoInterno?: boolean;
+}
+
+export async function assertUrlDeMidiaSegura(
+  url: string,
+  opcoes: OpcoesValidacaoUrl = {},
+): Promise<URL> {
   let parsed: URL;
 
   try {
@@ -62,6 +77,8 @@ export async function assertUrlDeMidiaSegura(url: string): Promise<URL> {
   }
 
   const host = parsed.hostname.replace(/^\[|\]$/g, '');
+
+  if (opcoes.permitirEnderecoInterno) return parsed;
 
   // Host que já é um IP: decide direto.
   if (isIP(host)) {

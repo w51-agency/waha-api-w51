@@ -1,16 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { PrismaService } from '../../prisma/prisma.service';
-import { mapStatus } from '../sessions/sessions.service';
-
-import type { Session } from '../../generated/prisma/client';
 import type {
   WahaMessage,
   WahaMessageAckPayload,
   WahaSessionStatusPayload,
   WahaWebhookEvent,
 } from '@gateway/shared';
-
 import {
   ACK_TO_STATUS,
   Direction,
@@ -18,6 +13,12 @@ import {
   MessageStatus,
   SessionStatus,
 } from '@gateway/shared';
+
+import { PrismaService } from '../../prisma/prisma.service';
+import { mapStatus } from '../sessions/sessions.service';
+import { WebhooksOutService } from '../webhooks-out/webhooks-out.service';
+
+import type { Session } from '../../generated/prisma/client';
 
 export type ResultadoIngestao = 'processado' | 'duplicado' | 'ignorado';
 
@@ -40,7 +41,10 @@ export type ResultadoIngestao = 'processado' | 'duplicado' | 'ignorado';
 export class WebhookIngestService {
   private readonly logger = new Logger(WebhookIngestService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly webhooks: WebhooksOutService,
+  ) {}
 
   async processar(evento: WahaWebhookEvent): Promise<ResultadoIngestao> {
     // A trava vem primeiro: se a inserção colidir, o evento já foi tratado.
@@ -181,7 +185,35 @@ export class WebhookIngestService {
       this.logger.warn(`Sessão ${session.name} mudou para ${status}`);
     }
 
-    await this.prisma.session.update({ where: { id: session.id }, data: dados as never });
+    const atualizada = await this.prisma.session.update({
+      where: { id: session.id },
+      data: dados as never,
+    });
+
+    // Repasse ao integrador. `publicar` nunca propaga erro: o repasse é
+    // secundário em relação a ter registrado o evento.
+    await this.webhooks.publicar(session.applicationId, 'session.status', { status }, atualizada);
+
+    if (status === SessionStatus.WORKING && session.status !== SessionStatus.WORKING) {
+      await this.webhooks.publicar(
+        session.applicationId,
+        'session.connected',
+        { phoneNumber: atualizada.phoneNumber, pushName: atualizada.pushName },
+        atualizada,
+      );
+    }
+
+    if (
+      (status === SessionStatus.STOPPED || status === SessionStatus.FAILED) &&
+      session.status === SessionStatus.WORKING
+    ) {
+      await this.webhooks.publicar(
+        session.applicationId,
+        'session.disconnected',
+        { status },
+        atualizada,
+      );
+    }
   }
 
   // ===========================================================================
@@ -203,7 +235,7 @@ export class WebhookIngestService {
 
     // Upsert em vez de create: `message` e `message.any` podem trazer a mesma
     // mensagem, e um envio nosso já pode ter o registro criado pela tarefa 11.
-    await this.prisma.message.upsert({
+    const registro = await this.prisma.message.upsert({
       where: { sessionId_wahaId: { sessionId: session.id, wahaId: payload.id } },
       create: {
         applicationId: session.applicationId,
@@ -229,6 +261,23 @@ export class WebhookIngestService {
         raw: payload as never,
       },
     });
+
+    await this.webhooks.publicar(
+      session.applicationId,
+      fromMe ? 'message.sent' : 'message.received',
+      {
+        id: registro.id,
+        chatId,
+        from: payload.from,
+        type: registro.type,
+        body: registro.body,
+        // A mídia é referenciada pelo nosso proxy, nunca pela URL interna do WAHA.
+        mediaUrl: registro.mediaUrl ? `/v1/media/${registro.id}` : null,
+        mediaMimeType: registro.mediaMimeType,
+        timestamp: registro.timestamp.toISOString(),
+      },
+      session,
+    );
   }
 
   /**
@@ -271,6 +320,21 @@ export class WebhookIngestService {
         ...(deveAtualizar ? { status: novoStatus } : {}),
       },
     });
+
+    if (deveAtualizar) {
+      await this.webhooks.publicar(
+        session.applicationId,
+        'message.ack',
+        {
+          id: mensagem.id,
+          chatId: mensagem.chatId,
+          ack: payload.ack,
+          ackName: payload.ackName ?? null,
+          status: novoStatus,
+        },
+        session,
+      );
+    }
   }
 
   private async aoRevogar(evento: WahaWebhookEvent, session: Session): Promise<void> {

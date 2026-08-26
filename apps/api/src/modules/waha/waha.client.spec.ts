@@ -5,12 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppConfig } from '../../config';
 
 import { WahaClient } from './waha.client';
-import {
-  WahaAuthError,
-  WahaSessionNotFoundError,
-  WahaUnavailableError,
-  WahaValidationError,
-} from './waha.errors';
+import { WahaAuthError, WahaSessionNotFoundError, WahaUnavailableError } from './waha.errors';
 
 const BASE = 'http://waha-teste:3000';
 

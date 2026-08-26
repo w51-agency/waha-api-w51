@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import { ActorType } from '../../generated/prisma/enums';
 import { PrismaService } from '../../prisma/prisma.service';
 
-import { ActorType } from '../../generated/prisma/enums';
 import type { Request } from 'express';
 
 export interface AuditInput {

@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
+import { SessionStatus } from '@gateway/shared';
+
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../redis/redis.service';
 import { WahaClient } from '../waha/waha.client';
 
 import { mapStatus } from './sessions.service';
-
-import { SessionStatus } from '@gateway/shared';
 
 const LOCK_KEY = 'sessions:sync:lock';
 const LOCK_TTL_SEGUNDOS = 55;

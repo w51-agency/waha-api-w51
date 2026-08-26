@@ -10,11 +10,10 @@ import { ApiThrottlerGuard } from './common/guards/api-throttler.guard';
 import { LoggingModule } from './common/logging/logging.module';
 import { AppConfig, ConfigModule } from './config';
 import { HealthModule } from './health/health.module';
-import { PrismaModule } from './prisma/prisma.module';
-import { RedisModule } from './redis/redis.module';
-import { RedisService } from './redis/redis.service';
 import { AccountModule } from './modules/account/account.module';
 import { AdminAuthModule } from './modules/admin-auth/admin-auth.module';
+import { ApiKeyGuard } from './modules/api-keys/api-key.guard';
+import { ApiKeyModule } from './modules/api-keys/api-key.module';
 import { ApplicationsModule } from './modules/applications/applications.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { HistoryModule } from './modules/history/history.module';
@@ -22,8 +21,10 @@ import { MessagesModule } from './modules/messages/messages.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { WahaModule } from './modules/waha/waha.module';
 import { WebhookIngestModule } from './modules/webhook-ingest/webhook-ingest.module';
-import { ApiKeyGuard } from './modules/api-keys/api-key.guard';
-import { ApiKeyModule } from './modules/api-keys/api-key.module';
+import { WebhooksOutModule } from './modules/webhooks-out/webhooks-out.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { RedisModule } from './redis/redis.module';
+import { RedisService } from './redis/redis.service';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { ApiKeyModule } from './modules/api-keys/api-key.module';
     MessagesModule,
     HistoryModule,
     WebhookIngestModule,
+    WebhooksOutModule,
   ],
   controllers: [AppController],
   providers: [

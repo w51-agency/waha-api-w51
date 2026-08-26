@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import type { WahaFile, WahaMessage } from '@gateway/shared';
+import { Direction, MessageStatus, SessionStatus } from '@gateway/shared';
+
 import { ConflictError, NotFoundError } from '../../common/errors/problem-details';
 import { AppConfig } from '../../config';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -19,11 +22,8 @@ import type {
   SendSeenDto,
   SendTextDto,
 } from './dto/send.dto';
-import type { AuthenticatedApiKey } from '../api-keys/api-key.types';
 import type { Session } from '../../generated/prisma/client';
-import type { WahaFile, WahaMessage } from '@gateway/shared';
-
-import { Direction, MessageStatus, SessionStatus } from '@gateway/shared';
+import type { AuthenticatedApiKey } from '../api-keys/api-key.types';
 
 type TipoMidia = 'image' | 'file' | 'voice' | 'video';
 
@@ -281,7 +281,7 @@ export class MessagesService {
     } catch (erro) {
       const motivo = erro instanceof Error ? erro.message : String(erro);
 
-      const falha = await this.prisma.message.update({
+      await this.prisma.message.update({
         where: { id: mensagem.id },
         data: { status: MessageStatus.FAILED, error: motivo.slice(0, 2000) },
       });

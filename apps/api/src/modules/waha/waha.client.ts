@@ -1,15 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Agent, request } from 'undici';
 
-import { AppConfig } from '../../config';
-
-import {
-  WahaAuthError,
-  WahaSessionNotFoundError,
-  WahaUnavailableError,
-  WahaValidationError,
-} from './waha.errors';
-
 import type {
   WahaChat,
   WahaCreateSessionRequest,
@@ -27,6 +18,15 @@ import type {
   WahaSession,
   WahaSessionConfig,
 } from '@gateway/shared';
+
+import { AppConfig } from '../../config';
+
+import {
+  WahaAuthError,
+  WahaSessionNotFoundError,
+  WahaUnavailableError,
+  WahaValidationError,
+} from './waha.errors';
 
 type Metodo = 'GET' | 'POST' | 'PUT' | 'DELETE';
 

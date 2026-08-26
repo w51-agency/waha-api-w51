@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import { Direction, MessageStatus, SessionStatus } from '@gateway/shared';
+
 import { ConflictError, NotFoundError } from '../../common/errors/problem-details';
 import { AppConfig } from '../../config';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -17,8 +19,6 @@ import type {
   PaginatedMessages,
 } from './dto/history.response';
 import type { Message, Session } from '../../generated/prisma/client';
-
-import { Direction, MessageStatus, SessionStatus } from '@gateway/shared';
 
 @Injectable()
 export class HistoryService {

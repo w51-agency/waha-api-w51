@@ -2,6 +2,8 @@ import { Controller, Headers, HttpCode, HttpStatus, Logger, Post, Req } from '@n
 import { ApiExcludeController } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 
+import type { WahaWebhookEvent } from '@gateway/shared';
+
 import { Public } from '../../common/decorators/public.decorator';
 import { UnauthorizedError } from '../../common/errors/problem-details';
 import { AppConfig } from '../../config';
@@ -10,7 +12,6 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { WebhookIngestService } from './webhook-ingest.service';
 import { timestampDentroDaJanela, verificarAssinaturaWaha } from './webhook-signature';
 
-import type { WahaWebhookEvent } from '@gateway/shared';
 import type { Request } from 'express';
 
 /**

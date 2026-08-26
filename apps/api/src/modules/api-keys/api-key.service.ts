@@ -3,6 +3,8 @@ import { createHash } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { LRUCache } from 'lru-cache';
 
+import { API_SCOPES, type ApiScope } from '@gateway/shared';
+
 import {
   generateApiKey,
   parseApiKey,
@@ -13,8 +15,6 @@ import { AppConfig } from '../../config';
 import { PrismaService } from '../../prisma/prisma.service';
 
 import { AuthenticatedApiKey } from './api-key.types';
-
-import { API_SCOPES, type ApiScope } from '@gateway/shared';
 
 /** Resultado negativo também é cacheado, para que chave inválida repetida não martele o banco. */
 type CacheEntry = { ok: true; value: AuthenticatedApiKey } | { ok: false };

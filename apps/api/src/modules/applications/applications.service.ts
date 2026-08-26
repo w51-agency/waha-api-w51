@@ -5,16 +5,16 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { ApiKeyService } from '../api-keys/api-key.service';
 
 import type {
+  CreateApiKeyDto,
+  CreateApplicationDto,
+  UpdateApplicationDto,
+} from './dto/application.dto';
+import type {
   ApiKeyResponse,
   ApplicationDetailResponse,
   ApplicationResponse,
   CreatedApiKeyResponse,
 } from './dto/application.response';
-import type {
-  CreateApiKeyDto,
-  CreateApplicationDto,
-  UpdateApplicationDto,
-} from './dto/application.dto';
 import type { ApiKey, Application } from '../../generated/prisma/client';
 
 @Injectable()
