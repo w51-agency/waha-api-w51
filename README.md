@@ -35,15 +35,37 @@ Monorepo pnpm: `apps/api`, `apps/web`, `packages/shared`.
 
 ```bash
 cp .env.example .env
-./scripts/gen-secrets.sh      # gera os segredos no .env
+./scripts/gen-secrets.sh      # gera os segredos e imprime a senha do painel
 docker compose up -d          # postgres, redis e waha
 pnpm install
-pnpm dev
+pnpm dev                      # api e painel, com hot reload
 ```
 
-> **Portas** — todas vêm do `.env` (`WEB_PORT`, `API_PORT`, `POSTGRES_PORT`, `REDIS_PORT`,
-> `WAHA_PORT`). Nenhuma porta é fixa em compose, Dockerfile, nginx ou código: mudar uma
-> linha do `.env` e reiniciar basta.
+O `gen-secrets.sh` é idempotente: rodar de novo preenche apenas o que estiver vazio e
+re-sincroniza as URLs derivadas das portas. Para regenerar tudo, `--force` — ciente de que
+isso invalida tokens e a chave de acesso ao WAHA.
+
+Confira se subiu:
+
+```bash
+docker compose ps                                    # os três "healthy"
+curl -s localhost:${WAHA_PORT}/health                # WAHA respondendo
+```
+
+### Portas
+
+Todas vêm do `.env` — `WEB_PORT`, `API_PORT`, `POSTGRES_PORT`, `REDIS_PORT`, `WAHA_PORT` —
+mais `BIND_ADDRESS`, que decide entre `127.0.0.1` (só a sua máquina) e `0.0.0.0` (rede
+local). Nenhuma porta é fixa em compose, Dockerfile, nginx ou código.
+
+Conflito com algo que já roda na máquina? Edite a linha, rode `./scripts/gen-secrets.sh`
+para re-sincronizar as URLs e suba de novo. Ou, para um teste rápido:
+
+```bash
+WAHA_PORT=3910 POSTGRES_PORT=5544 docker compose up -d
+```
+
+Detalhes em [`docs/infraestrutura.md`](docs/infraestrutura.md).
 
 ## Convenções
 

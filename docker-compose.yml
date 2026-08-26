@@ -1,0 +1,136 @@
+# =============================================================================
+#  WhatsApp Gateway W51 — infraestrutura de DESENVOLVIMENTO
+# =============================================================================
+#  Sobe Postgres, Redis e WAHA. A API e o painel rodam no host (pnpm dev),
+#  para ter hot reload; em produção eles também viram containers
+#  (docker-compose.prod.yml, tarefa 20).
+#
+#  TODAS as portas do host vêm do .env. As portas INTERNAS são fixas de
+#  propósito: containers conversam entre si por nome de serviço, e isso não
+#  deve mudar quando você troca a porta do host.
+# =============================================================================
+
+name: waha-gateway-w51
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: w51-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gateway}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: ${POSTGRES_DB:-gateway}
+      WAHA_POSTGRES_DB: ${WAHA_POSTGRES_DB:-waha}
+      TZ: ${TZ:-America/Sao_Paulo}
+    ports:
+      - '${BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # cria o database do WAHA na primeira subida do volume
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/10-init-databases.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-gateway} -d ${POSTGRES_DB:-gateway}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks: [gateway]
+
+  redis:
+    image: redis:7-alpine
+    container_name: w51-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory-policy noeviction
+    # noeviction é deliberado: o Redis guarda filas BullMQ e refresh tokens.
+    # Despejar chaves sob pressão de memória perderia entregas de webhook em
+    # silêncio — melhor falhar a escrita e alertar do que perder trabalho.
+    environment:
+      TZ: ${TZ:-America/Sao_Paulo}
+    ports:
+      - '${BIND_ADDRESS:-127.0.0.1}:${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks: [gateway]
+
+  waha:
+    # Tag noweb: sem Chromium embutido, ~600 MB menor que a imagem completa.
+    # Versão fixada — "latest" muda debaixo dos pés e quebra deploy.
+    image: ${WAHA_IMAGE:-devlikeapro/waha:noweb-2026.8.1}
+    container_name: w51-waha
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # --- motor ---
+      WHATSAPP_DEFAULT_ENGINE: ${WHATSAPP_DEFAULT_ENGINE:-NOWEB}
+
+      # --- segurança ---
+      WAHA_API_KEY: ${WAHA_API_KEY:?defina WAHA_API_KEY no .env}
+      # /health liberado para o healthcheck do Docker não precisar da chave
+      WHATSAPP_API_KEY_EXCLUDE_PATH: /health
+      WAHA_DASHBOARD_ENABLED: ${WAHA_DASHBOARD_ENABLED:-false}
+      WHATSAPP_SWAGGER_ENABLED: ${WHATSAPP_SWAGGER_ENABLED:-false}
+
+      # --- persistência das sessões em Postgres ---
+      # Melhor que volume em disco: entra no mesmo backup do resto e sobrevive
+      # à recriação do container sem exigir cuidado com bind mount.
+      WHATSAPP_SESSIONS_POSTGRESQL_URL: postgresql://${POSTGRES_USER:-gateway}:${POSTGRES_PASSWORD}@postgres:5432/${WAHA_POSTGRES_DB:-waha}?sslmode=disable
+      WHATSAPP_RESTART_ALL_SESSIONS: ${WHATSAPP_RESTART_ALL_SESSIONS:-true}
+
+      # --- mídia ---
+      WHATSAPP_DOWNLOAD_MEDIA: 'true'
+      WHATSAPP_FILES_FOLDER: /app/media
+      WHATSAPP_FILES_LIFETIME: '0'
+      # URL base que o WAHA usa para montar links de mídia nos webhooks.
+      # Aponta para ele mesmo na rede interna: quem serve mídia para fora é o
+      # gateway, via proxy autenticado (tarefa 12).
+      WAHA_BASE_URL: http://waha:3000
+
+      # --- observabilidade ---
+      WAHA_LOG_FORMAT: ${WAHA_LOG_FORMAT:-JSON}
+      WAHA_LOG_LEVEL: ${WAHA_LOG_LEVEL:-info}
+      WAHA_PRINT_QR: ${WAHA_PRINT_QR:-true}
+
+      # --- identidade em "Aparelhos conectados" ---
+      WAHA_CLIENT_DEVICE_NAME: ${WAHA_CLIENT_DEVICE_NAME:-Gateway W51}
+
+      TZ: ${TZ:-America/Sao_Paulo}
+    ports:
+      # Publicado apenas em desenvolvimento. O compose de produção não expõe.
+      - '${BIND_ADDRESS:-127.0.0.1}:${WAHA_PORT:-3000}:3000'
+    extra_hosts:
+      # Em dev a API roda no host: é assim que o WAHA a alcança para entregar
+      # webhooks. Sem isto, host.docker.internal não resolve no Linux.
+      - 'host.docker.internal:host-gateway'
+    volumes:
+      - wahamedia:/app/media
+      - wahasessions:/app/.sessions
+    healthcheck:
+      # a imagem do WAHA traz curl, não wget
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:3000/health >/dev/null || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    networks: [gateway]
+
+volumes:
+  pgdata:
+  redisdata:
+  wahamedia:
+  wahasessions:
+
+networks:
+  gateway:
+    driver: bridge

@@ -15,7 +15,7 @@ objetivo, contexto, checklist e critérios de aceite executáveis.
 | # | Tarefa | Status |
 |---|---|---|
 | [01](01-fundacao-monorepo.md) | Fundação do monorepo | ✅ concluída |
-| [02](02-infra-docker-dev.md) | Infraestrutura Docker de dev | ⬜ pendente |
+| [02](02-infra-docker-dev.md) | Infraestrutura Docker de dev | ✅ concluída |
 | [03](03-modelagem-dados-prisma.md) | Modelagem de dados (Prisma) | ⬜ pendente |
 | [04](04-bootstrap-api-nestjs.md) | Bootstrap da API NestJS | ⬜ pendente |
 | [05](05-auth-api-key.md) | Autenticação por API key | ⬜ pendente |
