@@ -1,3 +1,4 @@
+export * from './gateway-events';
 export * from './waha/types';
 
 /**

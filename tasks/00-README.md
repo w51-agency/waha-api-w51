@@ -32,7 +32,7 @@ objetivo, contexto, checklist e critérios de aceite executáveis.
 | [16](16-painel-fundacao.md) | Painel — fundação | ✅ concluída |
 | [17](17-painel-sessoes-qr.md) | Painel — sessões e QR ao vivo | ✅ concluída |
 | [18](18-painel-mensagens-metricas.md) | Painel — mensagens e métricas | ✅ concluída |
-| [19](19-painel-apps-chaves-auditoria.md) | Painel — apps, chaves, webhooks e auditoria | ⬜ pendente |
+| [19](19-painel-apps-chaves-auditoria.md) | Painel — apps, chaves, webhooks e auditoria | ✅ concluída |
 | [20](20-testes-producao-entrega.md) | Testes, produção e entrega | ⬜ pendente |
 
 ## Convenções do projeto
