@@ -14,7 +14,11 @@
 #  Todas as portas continuam vindo do .env.
 # =============================================================================
 
-name: waha-gateway-w51
+# Nome diferente do compose de dev de propósito: o nome do projeto prefixa os
+# volumes. Com o mesmo nome, dev e produção na mesma máquina compartilhariam o
+# Postgres e as sessões do WAHA — e sessões criadas por um ambiente ficariam
+# órfãs no outro, batendo webhook no host errado em loop.
+name: waha-gateway-w51-prod
 
 x-log: &log
   driver: json-file

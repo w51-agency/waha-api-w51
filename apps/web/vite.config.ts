@@ -1,3 +1,5 @@
+import { fileURLToPath, URL } from 'node:url';
+
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
@@ -16,6 +18,21 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    // O alias `@` precisa existir aqui além do tsconfig: o `tsc` lê `paths`,
+    // mas o servidor de desenvolvimento do Vite não — sem isto o painel abre em
+    // branco em `pnpm dev` com "Failed to resolve import '@/...'".
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        // O shared é compilado em CommonJS para o NestJS. Servido cru ao browser,
+        // o Vite não consegue extrair os exports nomeados ("does not provide an
+        // export named ..."). Apontando para o fonte, o painel não depende do
+        // `dist` nem de pré-bundle, e edita-se o shared com hot reload.
+        '@gateway/shared': fileURLToPath(
+          new URL('../../packages/shared/src/index.ts', import.meta.url),
+        ),
+      },
+    },
     server: {
       port: Number(env.WEB_DEV_PORT || 5173),
       proxy: {

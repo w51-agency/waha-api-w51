@@ -51,6 +51,21 @@ dc exec api sh -c 'curl -s http://waha:3000/api/sessions -H "x-api-key: $WAHA_AP
 **Se os dois discordam**, a reconciliação corrige em até um minuto (roda por cron). Para
 forçar, basta abrir o detalhe da sessão no painel — a leitura sincroniza.
 
+A mesma reconciliação também cuida de duas situações que só aparecem ao trocar de ambiente
+ou resetar o banco:
+
+- **Webhook apontando para o host errado** (a sessão foi criada quando o gateway respondia
+  em `host.docker.internal`, e agora ele roda em `api`, ou vice-versa). O WAHA guarda a URL
+  original para sempre; o cron a substitui pela `GATEWAY_INTERNAL_URL` atual e pelo segredo
+  do banco. Procure `Webhook da sessão ... atualizado` no log da API.
+- **Sessão órfã** — existe no WAHA com o carimbo do gateway, mas não no banco. Ficaria
+  reiniciando e batendo webhook com 401 em loop. O cron a remove do WAHA; procure
+  `existia no WAHA mas não no banco` no log. Sessões sem o carimbo não são tocadas.
+
+**"Falhou" logo depois de pedir o QR** normalmente é só o QR que expirou sem ser escaneado:
+o WAHA tenta alguns códigos e depois para a sessão. Reinicie pelo painel e escaneie dentro
+de ~1 minuto.
+
 **Se o WAHA também diz que caiu:**
 
 1. Reinicie a sessão pelo painel (**Números → ⋮ → Reiniciar**)

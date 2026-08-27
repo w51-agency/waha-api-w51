@@ -97,6 +97,13 @@ Volumes:
 | `wahamedia` | Mídia baixada, servida ao integrador via proxy do gateway |
 | `wahasessions` | Fallback de sessão em disco (pouco usado com Postgres ativo) |
 
+**Dev e produção não compartilham volumes.** O nome do projeto prefixa os volumes, e os
+dois arquivos de compose usam nomes diferentes (`waha-gateway-w51` e
+`waha-gateway-w51-prod`). Com o mesmo nome, subir os dois na mesma máquina faria um
+enxergar as sessões do outro — cada uma com o webhook apontando para o host errado. Se
+você já tinha uma produção de pé com o nome antigo, os volumes dela continuam existindo
+com o prefixo `waha-gateway-w51_`; renomeie-os ou restaure do backup.
+
 O Redis roda com `maxmemory-policy noeviction` de propósito: ele guarda filas de webhook e
 refresh tokens. Despejar chaves sob pressão de memória perderia entregas em silêncio —
 falhar a escrita e alertar é preferível a perder trabalho sem ninguém notar.

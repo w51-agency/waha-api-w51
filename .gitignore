@@ -18,6 +18,8 @@ apps/web/dist/
 .sessions/
 backups/
 *.sql
+# ...exceto as migrations do Prisma, que são código e precisam ir pro repo
+!apps/api/prisma/migrations/**/*.sql
 *.sql.gz
 
 # logs

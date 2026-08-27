@@ -1,16 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
-import { SessionStatus } from '@gateway/shared';
+import { SessionStatus, type WahaSession } from '@gateway/shared';
 
+import { AppConfig } from '../../config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '../../redis/redis.service';
 import { WahaClient } from '../waha/waha.client';
 
-import { mapStatus } from './sessions.service';
+import { buildSessionConfig, mapStatus } from './sessions.service';
+
+import type { Application, Session } from '../../generated/prisma/client';
 
 const LOCK_KEY = 'sessions:sync:lock';
 const LOCK_TTL_SEGUNDOS = 55;
+
+/** Chave de metadado que o gateway carimba em toda sessão que cria no WAHA. */
+const METADATA_SESSION_ID = 'gateway.session.id';
 
 /**
  * Reconciliação periódica entre o estado local e o do WAHA.
@@ -20,9 +26,19 @@ const LOCK_TTL_SEGUNDOS = 55;
  * tentativas falharem, o número nunca é gravado e a funcionalidade principal do
  * produto some sem deixar rastro.
  *
- * Este job é a rede de segurança: compara os status, corrige as divergências e,
- * o mais importante, **completa o vínculo de sessões que estão WORKING mas sem
- * número** consultando o `/me` do WAHA.
+ * Este job é a rede de segurança. A cada minuto:
+ *
+ * 1. Corrige status divergentes e **completa o vínculo de sessões WORKING sem
+ *    número** consultando o `/me` do WAHA.
+ * 2. Garante que o webhook de cada sessão aponta para **este** gateway, com o
+ *    segredo que está no banco — a URL muda quando o gateway troca de host
+ *    (dev → produção) e o WAHA guarda a antiga para sempre.
+ * 3. Remove do WAHA sessões que **este gateway criou** mas que já não existem
+ *    no banco (banco resetado, ambiente trocado). Sem isto elas ficam
+ *    reiniciando, ocupando memória e batendo webhook em loop com 401.
+ *
+ * Sessões no WAHA sem o carimbo do gateway não são tocadas: podem ser de outro
+ * sistema apontando para o mesmo WAHA.
  */
 @Injectable()
 export class SessionsSyncService {
@@ -32,6 +48,7 @@ export class SessionsSyncService {
     private readonly prisma: PrismaService,
     private readonly waha: WahaClient,
     private readonly redis: RedisService,
+    private readonly config: AppConfig,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -49,10 +66,9 @@ export class SessionsSyncService {
   }
 
   private async executar(): Promise<void> {
-    const locais = await this.prisma.session.findMany();
-    if (locais.length === 0) return;
+    const locais = await this.prisma.session.findMany({ include: { application: true } });
 
-    let remotas;
+    let remotas: WahaSession[];
     try {
       remotas = await this.waha.listSessions(true);
     } catch (erro) {
@@ -61,8 +77,7 @@ export class SessionsSyncService {
     }
 
     const porNome = new Map(remotas.map((s) => [s.name, s]));
-    let corrigidas = 0;
-    let vinculadas = 0;
+    const resumo = { corrigidas: 0, vinculadas: 0, webhooks: 0, removidas: 0 };
 
     for (const local of locais) {
       const remota = porNome.get(local.name);
@@ -76,10 +91,12 @@ export class SessionsSyncService {
             data: { status: SessionStatus.FAILED, lastStatusAt: new Date() },
           });
           this.logger.warn(`Sessão ${local.name} não existe mais no WAHA — marcada FAILED`);
-          corrigidas++;
+          resumo.corrigidas++;
         }
         continue;
       }
+
+      if (await this.corrigirWebhook(local, remota)) resumo.webhooks++;
 
       const status = mapStatus(remota.status);
 
@@ -97,7 +114,7 @@ export class SessionsSyncService {
               : {}),
           },
         });
-        corrigidas++;
+        resumo.corrigidas++;
       }
 
       // O caso que mais importa: conectada, mas sem o número gravado — sinal de
@@ -118,15 +135,86 @@ export class SessionsSyncService {
           this.logger.log(
             `Vínculo recuperado: ${local.name} -> ${me.id} (webhook havia se perdido)`,
           );
-          vinculadas++;
+          resumo.vinculadas++;
         }
       }
     }
 
-    if (corrigidas > 0 || vinculadas > 0) {
+    resumo.removidas = await this.removerOrfas(remotas, new Set(locais.map((s) => s.name)));
+
+    if (Object.values(resumo).some((n) => n > 0)) {
       this.logger.log(
-        `Reconciliação: ${corrigidas} status corrigido(s), ${vinculadas} vínculo(s) recuperado(s)`,
+        `Reconciliação: ${resumo.corrigidas} status corrigido(s), ${resumo.vinculadas} vínculo(s) ` +
+          `recuperado(s), ${resumo.webhooks} webhook(s) atualizado(s), ${resumo.removidas} órfã(s) removida(s)`,
       );
     }
+  }
+
+  /**
+   * O WAHA guarda a configuração dada na criação e nunca a revisita. Se a URL
+   * interna do gateway mudou (outro host, outra porta), o segredo não bate com
+   * o do banco ou o carimbo de identidade sumiu, todo evento daquela sessão
+   * chega em 401 ou em lugar nenhum — e a sessão parece saudável no painel
+   * enquanto nada é registrado. Reescrevemos a configuração inteira esperada.
+   */
+  private async corrigirWebhook(
+    local: Session & { application: Application },
+    remota: WahaSession,
+  ): Promise<boolean> {
+    const esperada = buildSessionConfig(
+      this.config,
+      {
+        applicationId: local.applicationId,
+        applicationSlug: local.application.slug,
+        sessionId: local.id,
+        apiKeyId: local.createdByApiKeyId,
+      },
+      local.webhookSecret,
+    );
+    const webhookEsperado = esperada.webhooks![0]!;
+    const atual = remota.config?.webhooks?.[0];
+
+    const igual =
+      atual !== undefined &&
+      atual.url === webhookEsperado.url &&
+      atual.hmac?.key === webhookEsperado.hmac?.key &&
+      remota.config?.metadata?.[METADATA_SESSION_ID] === local.id;
+    if (igual) return false;
+
+    try {
+      await this.waha.updateSession(local.name, { ...remota.config, ...esperada });
+      this.logger.warn(
+        `Webhook da sessão ${local.name} apontava para ${atual?.url ?? '(nenhum)'} — atualizado para ${webhookEsperado.url}`,
+      );
+      return true;
+    } catch (erro) {
+      this.logger.warn(`Não foi possível atualizar o webhook de ${local.name}: ${String(erro)}`);
+      return false;
+    }
+  }
+
+  /**
+   * Sessões que carregam o carimbo do gateway mas não existem mais no banco.
+   * Só apagamos o que é comprovadamente nosso — o metadado é a prova.
+   */
+  private async removerOrfas(remotas: WahaSession[], conhecidas: Set<string>): Promise<number> {
+    let removidas = 0;
+
+    for (const remota of remotas) {
+      if (conhecidas.has(remota.name)) continue;
+      if (!remota.config?.metadata?.[METADATA_SESSION_ID]) continue;
+
+      try {
+        await this.waha.deleteSession(remota.name);
+        this.logger.warn(
+          `Sessão ${remota.name} existia no WAHA mas não no banco — removida do WAHA`,
+        );
+        removidas++;
+      } catch (erro) {
+        this.logger.warn(`Não foi possível remover a órfã ${remota.name}: ${String(erro)}`);
+      }
+    }
+
+    return removidas;
   }
 }

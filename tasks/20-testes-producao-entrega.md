@@ -226,3 +226,22 @@ grep de porta literal em compose                   nenhuma
 O envio real de mensagem exige um número conectado por QR — o que precisa de um celular.
 Toda a mecânica está coberta por testes com o WAHA dublado, e o QR real foi obtido do WAHA
 verdadeiro em desenvolvimento e em produção.
+
+### Três falhas encontradas depois da entrega
+
+**1. O painel abria em branco em `pnpm dev`.** O alias `@` existia só no `tsconfig`; o
+`tsc` lê `paths`, o servidor do Vite não. O build de produção passava, por isso não foi
+pego. Corrigido com `resolve.alias` explícito no `vite.config.ts`.
+
+**2. `does not provide an export named 'MessageStatus'`.** O `@gateway/shared` é compilado
+em CommonJS para o NestJS e o Vite servia o `dist` cru ao browser. O painel agora aponta
+`@gateway/shared` para o fonte (`packages/shared/src/index.ts`), no Vite e no tsconfig —
+sem CJS no browser, sem depender do `dist`, com hot reload.
+
+**3. Sessões órfãs no WAHA em loop de 401.** `docker-compose.yml` e
+`docker-compose.prod.yml` tinham o mesmo `name`, logo os mesmos volumes: sessões criadas em
+produção (`http://api:3001`) reapareciam no WAHA de dev, sem registro no banco e com HMAC
+que ninguém conhecia. Dois ajustes: o compose de produção ganhou nome próprio, e a
+reconciliação por cron passou a remover órfãs carimbadas pelo gateway e a corrigir a URL e o
+segredo do webhook de toda sessão local.
+

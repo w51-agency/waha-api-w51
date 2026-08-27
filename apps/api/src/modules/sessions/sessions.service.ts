@@ -1,7 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { customAlphabet } from 'nanoid';
 
-import { SESSION_STATUS_LABELS, SessionStatus, type WahaSessionStatus } from '@gateway/shared';
+import {
+  SESSION_STATUS_LABELS,
+  SessionStatus,
+  type WahaSessionConfig,
+  type WahaSessionStatus,
+  type WahaWebhookConfig,
+} from '@gateway/shared';
 
 import { generateSecret } from '../../common/crypto/api-key.crypto';
 import { ConflictError, NotFoundError } from '../../common/errors/problem-details';
@@ -25,6 +31,56 @@ const nanoid = customAlphabet('23456789abcdefghijkmnpqrstuvwxyz', 8);
  * evita que ele exiba um código morto e conclua que o sistema está quebrado.
  */
 const QR_TTL_SEGUNDOS = 20;
+
+/** Identidade carimbada no `config.metadata` de cada sessão do WAHA. */
+export interface SessionIdentity {
+  applicationId: string;
+  applicationSlug: string;
+  sessionId: string;
+  /** Vazio quando a criação vem do painel, que não tem API key. */
+  apiKeyId: string | null;
+}
+
+/**
+ * O webhook que cada sessão do WAHA aponta de volta para o gateway.
+ */
+export function buildWebhookConfig(config: AppConfig, secret: string): WahaWebhookConfig {
+  return {
+    url: `${config.get('GATEWAY_INTERNAL_URL').replace(/\/+$/, '')}/internal/waha/webhook`,
+    events: ['*'],
+    hmac: { key: secret },
+    retries: { policy: 'exponential', delaySeconds: 2, attempts: 15 },
+  };
+}
+
+/**
+ * A configuração completa que uma sessão nossa deve ter no WAHA.
+ *
+ * Fica numa função só porque dois lugares precisam da mesma resposta: a
+ * criação da sessão e a reconciliação, que compara o que está no WAHA com o
+ * que deveria estar e reescreve quando diverge (a URL muda quando o gateway
+ * troca de host — dev para produção, por exemplo).
+ */
+export function buildSessionConfig(
+  config: AppConfig,
+  identity: SessionIdentity,
+  secret: string,
+): WahaSessionConfig {
+  return {
+    // O `config.metadata` do WAHA aceita chaves arbitrárias e é devolvido em
+    // todo webhook — é o que torna o rastreio de origem confiável.
+    metadata: {
+      'application.id': identity.applicationId,
+      'application.slug': identity.applicationSlug,
+      'gateway.session.id': identity.sessionId,
+      'created.by.apikey': identity.apiKeyId || 'painel',
+    },
+    // Sem o store, o motor NOWEB não dá acesso a chats, contatos nem
+    // histórico — a tarefa 12 depende disto.
+    noweb: { store: { enabled: true, fullSync: false } },
+    webhooks: [buildWebhookConfig(config, secret)],
+  };
+}
 
 @Injectable()
 export class SessionsService {
@@ -97,25 +153,16 @@ export class SessionsService {
       await this.waha.createSession({
         name,
         start: true,
-        config: {
-          metadata: {
-            'application.id': applicationId,
-            'application.slug': apiKey.application.slug,
-            'gateway.session.id': session.id,
-            'created.by.apikey': apiKey.id || 'painel',
+        config: buildSessionConfig(
+          this.config,
+          {
+            applicationId,
+            applicationSlug: apiKey.application.slug,
+            sessionId: session.id,
+            apiKeyId: apiKey.id || null,
           },
-          // Sem o store, o motor NOWEB não dá acesso a chats, contatos nem
-          // histórico — a tarefa 12 depende disto.
-          noweb: { store: { enabled: true, fullSync: false } },
-          webhooks: [
-            {
-              url: `${this.config.get('GATEWAY_INTERNAL_URL').replace(/\/+$/, '')}/internal/waha/webhook`,
-              events: ['*'],
-              hmac: { key: webhookSecret },
-              retries: { policy: 'exponential', delaySeconds: 2, attempts: 15 },
-            },
-          ],
-        },
+          webhookSecret,
+        ),
       });
     } catch (erro) {
       await this.prisma.session.delete({ where: { id: session.id } }).catch(() => undefined);
