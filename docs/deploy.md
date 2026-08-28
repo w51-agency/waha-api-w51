@@ -35,9 +35,8 @@ recuperável (só regenerável).
 Ajuste o que fizer sentido no `.env`:
 
 ```bash
-# Onde o painel escuta. Deixe em 127.0.0.1 e coloque um proxy com TLS na frente.
-BIND_ADDRESS=127.0.0.1
-WEB_PORT=8080
+# Rede Docker compartilhada com o Nginx Proxy Manager (criada no passo 3)
+PROXY_NETWORK=npm-proxy
 
 # Origens que podem chamar a API pelo navegador
 CORS_ORIGINS=https://gateway.seu-dominio.com
@@ -45,10 +44,50 @@ CORS_ORIGINS=https://gateway.seu-dominio.com
 TZ=America/Sao_Paulo
 ```
 
-> **Portas.** Todas vêm daqui. Se `8080` conflitar com algo, troque `WEB_PORT` — nenhuma
-> imagem precisa ser reconstruída.
+> **Portas.** Em produção este projeto **não publica porta nenhuma no host**. Postgres,
+> Redis, WAHA e API ficam numa rede própria (`waha-gateway-w51-prod_interna`), e só o
+> painel entra também na rede do proxy. Por isso ele não conflita com nenhum outro
+> projeto da máquina — mesmo outro Postgres na `5432` ou outro painel na `8080`.
+> `WEB_PORT` e `BIND_ADDRESS` do `.env` só valem em dev ou com o override
+> `docker-compose.port.yml`.
 
-## 3. Suba
+## 3. Crie a rede do proxy
+
+Uma vez por servidor. O Nginx Proxy Manager precisa enxergar o painel pela rede Docker,
+então os dois compartilham uma rede criada fora de qualquer compose — assim nenhum
+projeto a cria nem a apaga ao subir ou descer:
+
+```bash
+docker network create npm-proxy
+```
+
+Ligue o container do NPM a ela. Descubra o nome dele com `docker ps` (costuma ser
+`nginx-proxy-manager`, `npm-app-1` ou parecido):
+
+```bash
+docker network connect npm-proxy <container-do-npm>
+```
+
+Para que a ligação sobreviva a um `docker compose up` do NPM, acrescente a rede no
+compose **dele**:
+
+```yaml
+# docker-compose.yml do Nginx Proxy Manager
+services:
+  app:
+    networks:
+      - default
+      - npm-proxy
+
+networks:
+  npm-proxy:
+    external: true
+```
+
+Se o NPM já tem uma rede externa própria, use-a: basta pôr o nome dela em
+`PROXY_NETWORK` no `.env` e pular o `network create`.
+
+## 4. Suba
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
@@ -67,39 +106,103 @@ Todos devem estar `healthy`, exceto `migrate`, que aparece como `Exited (0)` —
 efêmero por natureza.
 
 ```bash
-curl -s localhost:${WEB_PORT:-8080}/api/health/ready
+docker compose -f docker-compose.prod.yml exec web wget -qO- http://localhost/api/health/ready
 ```
 
-Deve responder `"status":"ok"` com `postgres`, `redis` e `waha` em `up`.
+Deve responder `"status":"ok"` com `postgres`, `redis` e `waha` em `up`. (Não há porta no
+host para testar com `curl` de fora — é assim de propósito.)
 
 ---
 
-## 4. Coloque TLS na frente
+## 5. Cadastre no Nginx Proxy Manager
 
-**O painel trafega credenciais e o conteúdo das conversas.** Não o exponha em HTTP.
+O painel trafega credenciais e o conteúdo das conversas: só exponha em HTTPS.
 
-O jeito mais simples é o Caddy, que resolve o certificado sozinho:
+Confira antes que o NPM enxerga o painel pelo nome (o container chama-se
+`waha-gateway-w51-web`, fixo):
 
-```caddy
-# /etc/caddy/Caddyfile
-gateway.seu-dominio.com {
-    reverse_proxy 127.0.0.1:8080
+```bash
+docker exec <container-do-npm> wget -qO- http://waha-gateway-w51-web/api/health/live
+```
 
-    # Server-Sent Events: sem desligar o buffer, o painel para de receber
-    # atualizações em tempo real sem dar sinal.
-    @sse path /api/admin/events
-    reverse_proxy @sse 127.0.0.1:8080 {
-        flush_interval -1
-    }
+Se responder JSON, siga. Se der *bad address*, o NPM não está na rede `npm-proxy` —
+volte ao passo 3.
+
+### Proxy Host
+
+**Hosts → Proxy Hosts → Add Proxy Host**
+
+| Aba | Campo | Valor |
+|---|---|---|
+| Details | Domain Names | `gateway.seu-dominio.com` |
+| Details | Scheme | `http` |
+| Details | Forward Hostname / IP | `waha-gateway-w51-web` |
+| Details | Forward Port | `80` |
+| Details | Cache Assets | **desligado** |
+| Details | Block Common Exploits | ligado |
+| Details | Websockets Support | ligado |
+| SSL | SSL Certificate | *Request a new SSL Certificate* (Let's Encrypt) |
+| SSL | Force SSL | ligado |
+| SSL | HTTP/2 Support | ligado |
+| SSL | HSTS Enabled | ligado |
+
+**Cache Assets** precisa ficar desligado: ele faz o NPM guardar respostas por extensão e
+o painel já controla cache dos próprios estáticos — com ele ligado, um deploy pode
+servir `index.html` novo apontando para um bundle antigo.
+
+### Aba Advanced — obrigatório
+
+O painel recebe atualizações em tempo real (QR, status das sessões, mensagens) por
+**Server-Sent Events** em `/api/admin/events`. O nginx do NPM, por padrão, guarda a
+resposta em buffer e a entrega em blocos — o painel simplesmente para de atualizar,
+sem erro. Cole em **Custom Nginx Configuration**:
+
+```nginx
+# Server-Sent Events: entrega imediata e conexão longa
+location /api/admin/events {
+    proxy_pass http://waha-gateway-w51-web;
+    proxy_http_version 1.1;
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Connection        '';
+    proxy_buffering    off;
+    proxy_cache        off;
+    proxy_read_timeout 24h;
+    chunked_transfer_encoding off;
 }
+
+# Envio de mídia pela API: precisa caber o BODY_LIMIT (25 MB por padrão)
+client_max_body_size 25m;
 ```
 
-Com nginx, o equivalente é `proxy_buffering off` no bloco de `/api/admin/events` —
-o mesmo cuidado que o nginx interno do painel já toma.
+Se mudar `BODY_LIMIT` no `.env`, ajuste `client_max_body_size` aqui também — o limite
+mais baixo dos dois é o que vale.
+
+### Confira
+
+1. `https://gateway.seu-dominio.com` abre a tela de login com cadeado.
+2. `curl -sI https://gateway.seu-dominio.com/api/health/live` responde `200`.
+3. Logado, em **Números → Conectar número**, o QR aparece e **muda sozinho** a cada
+   poucos segundos. Se ficar parado, o bloco de SSE acima não foi aplicado.
+4. Em **Auditoria**, os registros mostram o seu IP público, não `172.x.x.x` — sinal de
+   que `X-Forwarded-For` está chegando.
+
+### Domínio em CORS_ORIGINS
+
+O `.env` precisa ter exatamente a origem que o navegador usa:
+
+```bash
+CORS_ORIGINS=https://gateway.seu-dominio.com
+```
+
+Sem isso o login funciona pelo painel (mesma origem), mas chamadas de outro front
+para a API são bloqueadas. Após mudar: `docker compose -f docker-compose.prod.yml up -d api`.
 
 ---
 
-## 5. Primeiro acesso
+## 6. Primeiro acesso
 
 1. Abra `https://gateway.seu-dominio.com`
 2. Entre com `ADMIN_USERNAME` e a senha gerada
@@ -170,18 +273,31 @@ Retenção padrão: 14 dias (`BACKUP_RETENTION_DAYS`).
 
 ## O que está exposto
 
-Só o painel publica porta. Verificado:
+Nada, diretamente. Verificado:
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' localhost:8080/    # 200
-nc -z localhost 3001 && echo "API exposta"       # fechada
-nc -z localhost 3000 && echo "WAHA exposto"      # fechada
-nc -z localhost 5432 && echo "Postgres exposto"  # fechada
-nc -z localhost 6379 && echo "Redis exposto"     # fechada
+docker compose -f docker-compose.prod.yml ps --format '{{.Name}} {{.Ports}}'
+# nenhuma linha deve conter "->" (mapeamento para o host)
+
+docker network inspect npm-proxy --format '{{range .Containers}}{{.Name}} {{end}}'
+# só o NPM e waha-gateway-w51-web
 ```
 
-O WAHA exposto seria uma sessão de WhatsApp de alguém à mercê da internet. A API só é
-alcançável pelo proxy do painel, que aplica os mesmos cabeçalhos de segurança.
+A única porta de entrada é o `443` do Nginx Proxy Manager. Ele alcança o painel; o painel
+alcança a API; a API alcança WAHA, Postgres e Redis — cada salto numa rede que os
+demais projetos da máquina não veem. O WAHA exposto seria uma sessão de WhatsApp de
+alguém à mercê da internet.
+
+### Acesso direto para depurar
+
+Quando precisar bater no painel sem o proxy, publique a porta com o override — e só
+enquanto durar a depuração:
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.port.yml up -d web
+curl -s localhost:8080/api/health/ready
+docker compose -f docker-compose.prod.yml up -d web   # remove a porta
+```
 
 ---
 

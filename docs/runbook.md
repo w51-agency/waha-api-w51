@@ -14,7 +14,7 @@ alias dc='docker compose -f docker-compose.prod.yml'
 
 ```bash
 dc ps                                       # quem está de pé
-curl -s localhost:${WEB_PORT:-8080}/api/health/ready | jq .   # o que a API enxerga
+docker compose -f docker-compose.prod.yml exec web wget -qO- http://localhost/api/health/ready | jq .   # o que a API enxerga (sem porta no host em produção)
 dc logs --tail 100 api                      # o que a API disse
 ```
 

@@ -92,6 +92,9 @@ Todas vêm do `.env` — `WEB_PORT`, `API_PORT`, `POSTGRES_PORT`, `REDIS_PORT`, 
 mais `BIND_ADDRESS`, que decide entre `127.0.0.1` (só a sua máquina) e `0.0.0.0` (rede
 local). **Nenhuma porta é fixa** em compose, Dockerfile, nginx ou código.
 
+Em produção **nenhuma porta é publicada**: o painel é alcançado pelo Nginx Proxy Manager
+por uma rede Docker compartilhada (`PROXY_NETWORK`). Ver [`docs/deploy.md`](docs/deploy.md).
+
 Conflito com algo que já roda? Edite a linha, rode `./scripts/gen-secrets.sh` para
 re-sincronizar as URLs derivadas, e suba de novo:
 

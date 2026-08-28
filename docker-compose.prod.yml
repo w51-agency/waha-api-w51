@@ -3,8 +3,12 @@
 # =============================================================================
 #  Diferenças em relação ao compose de desenvolvimento, e o motivo de cada uma:
 #
-#  - WAHA, Postgres e Redis NÃO publicam porta. Só existem na rede interna. Um
-#    WAHA exposto é uma sessão de WhatsApp de alguém à mercê da internet.
+#  - NENHUM serviço publica porta no host. Postgres, Redis, WAHA e API vivem só
+#    na rede interna deste projeto; o painel (web) entra também na rede do
+#    Nginx Proxy Manager, que é quem o expõe com TLS. Sem porta no host, não há
+#    como conflitar com outro projeto na mesma máquina — e um WAHA exposto
+#    seria uma sessão de WhatsApp de alguém à mercê da internet.
+#    Para acesso direto em depuração, use o override docker-compose.port.yml.
 #  - As migrations rodam em um serviço próprio (`migrate deploy`, nunca
 #    `migrate dev`), que precisa terminar antes de a API subir.
 #  - Limites de memória e CPU declarados: uma sessão problemática não pode
@@ -205,6 +209,8 @@ services:
 
   web:
     image: ${GATEWAY_WEB_IMAGE:-waha-gateway-w51-web:local}
+    # Nome fixo: é o host que fica cadastrado no Nginx Proxy Manager.
+    container_name: waha-gateway-w51-web
     build:
       context: .
       dockerfile: docker/web/Dockerfile
@@ -218,16 +224,16 @@ services:
       WEB_INTERNAL_PORT: 80
       BODY_LIMIT: ${BODY_LIMIT:-25mb}
       TZ: ${TZ:-America/Sao_Paulo}
-    ports:
-      # O único serviço publicado. Coloque um proxy com TLS na frente para
-      # expor à internet — o painel trafega credenciais.
-      - '${BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-8080}:80'
     deploy:
       resources:
         limits:
           memory: 128m
     logging: *log
-    networks: [interna]
+    # Único serviço com pé na rede do proxy. O NPM o alcança como
+    # `waha-gateway-w51-web` na porta 80; nada é publicado no host.
+    networks:
+      - interna
+      - proxy
 
 volumes:
   pgdata:
@@ -236,5 +242,13 @@ volumes:
   wahasessions:
 
 networks:
+  # Rede exclusiva deste projeto. O compose a nomeia com o prefixo do projeto
+  # (waha-gateway-w51-prod_interna) e escolhe uma sub-rede livre sozinho — não
+  # fixe sub-rede aqui: é assim que se cria conflito com outro compose.
   interna:
     driver: bridge
+  # Rede do Nginx Proxy Manager, criada fora deste compose (ver docs/deploy.md).
+  # `external: true` garante que este projeto nunca a cria nem a remove.
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-npm-proxy}

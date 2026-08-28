@@ -1,0 +1,15 @@
+# =============================================================================
+#  Override OPCIONAL: publica o painel numa porta do host.
+# =============================================================================
+#  Em produção o painel não publica porta nenhuma — o Nginx Proxy Manager o
+#  alcança pela rede Docker. Use este arquivo só para depurar sem proxy:
+#
+#    docker compose -f docker-compose.prod.yml -f docker-compose.port.yml up -d web
+#
+#  e remova-o do comando seguinte para voltar ao normal. Bind em 127.0.0.1 por
+#  padrão: só a própria máquina enxerga.
+# =============================================================================
+services:
+  web:
+    ports:
+      - '${BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-8080}:80'
