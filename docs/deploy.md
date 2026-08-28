@@ -61,7 +61,37 @@ projeto a cria nem a apaga ao subir ou descer:
 docker network create npm-proxy
 ```
 
-Ligue o container do NPM a ela. Descubra o nome dele com `docker ps` (costuma ser
+### Ainda não tem o Nginx Proxy Manager?
+
+Há um compose pronto em [`deploy/nginx-proxy-manager/`](../deploy/nginx-proxy-manager/docker-compose.yml),
+já ligado à rede `npm-proxy`. Ele fica **fora** da pasta do projeto porque o proxy é da
+máquina, não do gateway — vai servir outros projetos também:
+
+```bash
+mkdir -p /opt/npm
+cp deploy/nginx-proxy-manager/docker-compose.yml /opt/npm/
+cd /opt/npm && docker compose up -d
+```
+
+Ele publica `80` e `443` (as únicas portas de entrada do servidor) e o admin em
+`127.0.0.1:81`. Confira antes que nada mais ocupa 80/443:
+
+```bash
+ss -ltnp | grep -E ':80 |:443 '    # vazio = livre
+```
+
+Para abrir o admin, faça um túnel da sua máquina e acesse `http://localhost:81`:
+
+```bash
+ssh -L 81:127.0.0.1:81 root@IP-DO-SERVIDOR
+```
+
+Login inicial `admin@example.com` / `changeme` — ele obriga a trocar na primeira
+entrada. Pule o restante deste passo: o container já nasce na rede certa.
+
+### Já tem o Nginx Proxy Manager rodando?
+
+Ligue o container dele à rede. Descubra o nome com `docker ps` (costuma ser
 `nginx-proxy-manager`, `npm-app-1` ou parecido):
 
 ```bash

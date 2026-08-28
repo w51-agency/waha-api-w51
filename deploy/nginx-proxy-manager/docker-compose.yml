@@ -1,0 +1,45 @@
+# =============================================================================
+#  Nginx Proxy Manager — fora do projeto, de propósito
+# =============================================================================
+#  O proxy é da máquina, não do gateway: serve este e qualquer outro projeto.
+#  Por isso vive num compose próprio, com nome próprio, e é o ÚNICO que
+#  publica 80/443 no host.
+#
+#  Uso (uma vez por servidor):
+#    mkdir -p /opt/npm && cp deploy/nginx-proxy-manager/docker-compose.yml /opt/npm/
+#    cd /opt/npm && docker network create npm-proxy && docker compose up -d
+#
+#  Painel de administração: http://IP-DO-SERVIDOR:81
+#  Login inicial: admin@example.com / changeme — troque no primeiro acesso.
+# =============================================================================
+name: npm
+
+services:
+  app:
+    image: jc21/nginx-proxy-manager:2
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - '80:80'     # HTTP  — só redireciona para HTTPS e valida o Let's Encrypt
+      - '443:443'   # HTTPS — a única entrada dos projetos
+      - '127.0.0.1:81:81'   # admin do NPM: só local; acesse por túnel SSH
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+    healthcheck:
+      test: ['CMD', '/usr/bin/check-health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: '20m'
+        max-file: '5'
+    networks:
+      - default      # rede própria do NPM
+      - npm-proxy    # rede compartilhada: cada projeto liga só o serviço que expõe
+
+networks:
+  npm-proxy:
+    external: true
