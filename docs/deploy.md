@@ -51,100 +51,37 @@ TZ=America/Sao_Paulo
 > `WEB_PORT` e `BIND_ADDRESS` do `.env` só valem em dev ou com o override
 > `docker-compose.port.yml`.
 
-## 3. Crie a rede do proxy
-
-Uma vez por servidor. O Nginx Proxy Manager precisa enxergar o painel pela rede Docker,
-então os dois compartilham uma rede criada fora de qualquer compose — assim nenhum
-projeto a cria nem a apaga ao subir ou descer:
+## 3. Suba
 
 ```bash
-docker network create npm-proxy
+./scripts/prod-up.sh
 ```
 
-### Ainda não tem o Nginx Proxy Manager?
+Um comando, idempotente — é o mesmo para o primeiro deploy e para cada atualização. Ele:
 
-Há um compose pronto em [`deploy/nginx-proxy-manager/`](../deploy/nginx-proxy-manager/docker-compose.yml),
-já ligado à rede `npm-proxy`. Ele fica **fora** da pasta do projeto porque o proxy é da
-máquina, não do gateway — vai servir outros projetos também:
+1. cria a rede `npm-proxy` se não existir (o compose não a cria: ela é compartilhada);
+2. encontra o container do Nginx Proxy Manager e o liga nessa rede, se ainda não estiver;
+3. roda `docker compose -f docker-compose.prod.yml up -d --build` — Postgres sobe, as
+   migrations rodam num container próprio e **precisam terminar** antes de a API subir;
+4. testa, de dentro do NPM, que o painel responde em `http://waha-gateway-w51-web`.
 
-```bash
-mkdir -p /opt/npm
-cp deploy/nginx-proxy-manager/docker-compose.yml /opt/npm/
-cd /opt/npm && docker compose up -d
-```
+Terminou com `OK`, está pronto para o passo 4. Todos os serviços devem estar `healthy`,
+exceto `migrate`, que aparece como `Exited (0)` — ele é efêmero por natureza.
 
-Ele publica `80` e `443` (as únicas portas de entrada do servidor) e o admin em
-`127.0.0.1:81`. Confira antes que nada mais ocupa 80/443:
+> **Ainda não tem o Nginx Proxy Manager?** Há um compose pronto em
+> [`deploy/nginx-proxy-manager/`](../deploy/nginx-proxy-manager/docker-compose.yml), já
+> ligado à rede `npm-proxy`. Ele fica fora da pasta do projeto porque o proxy é da máquina,
+> não do gateway: `mkdir -p /opt/npm && cp deploy/nginx-proxy-manager/docker-compose.yml /opt/npm/ && cd /opt/npm && docker compose up -d`.
+> Publica `80`, `443` e o admin em `127.0.0.1:81` (acesse por túnel:
+> `ssh -L 81:127.0.0.1:81 root@SERVIDOR`). Login inicial `admin@example.com` / `changeme`.
+> Depois, rode o `prod-up.sh` de novo.
 
-```bash
-ss -ltnp | grep -E ':80 |:443 '    # vazio = livre
-```
+> **A ligação do NPM à rede é feita pelo script a cada execução**, então um
+> `docker compose up` do NPM que a desfaça é corrigido no próximo deploy. Para fixá-la de
+> vez, acrescente no compose do NPM: `networks: [default, npm-proxy]` no serviço e
+> `networks: { npm-proxy: { external: true } }` no fim.
 
-Para abrir o admin, faça um túnel da sua máquina e acesse `http://localhost:81`:
-
-```bash
-ssh -L 81:127.0.0.1:81 root@IP-DO-SERVIDOR
-```
-
-Login inicial `admin@example.com` / `changeme` — ele obriga a trocar na primeira
-entrada. Pule o restante deste passo: o container já nasce na rede certa.
-
-### Já tem o Nginx Proxy Manager rodando?
-
-Ligue o container dele à rede. Descubra o nome com `docker ps` (costuma ser
-`nginx-proxy-manager`, `npm-app-1` ou parecido):
-
-```bash
-docker network connect npm-proxy <container-do-npm>
-```
-
-Para que a ligação sobreviva a um `docker compose up` do NPM, acrescente a rede no
-compose **dele**:
-
-```yaml
-# docker-compose.yml do Nginx Proxy Manager
-services:
-  app:
-    networks:
-      - default
-      - npm-proxy
-
-networks:
-  npm-proxy:
-    external: true
-```
-
-Se o NPM já tem uma rede externa própria, use-a: basta pôr o nome dela em
-`PROXY_NETWORK` no `.env` e pular o `network create`.
-
-## 4. Suba
-
-```bash
-docker compose -f docker-compose.prod.yml up -d --build
-```
-
-O primeiro build leva alguns minutos. A ordem é garantida pelo compose: Postgres sobe,
-as migrations rodam em um container próprio e **precisam terminar** antes de a API subir.
-
-Confira:
-
-```bash
-docker compose -f docker-compose.prod.yml ps
-```
-
-Todos devem estar `healthy`, exceto `migrate`, que aparece como `Exited (0)` — ele é
-efêmero por natureza.
-
-```bash
-docker compose -f docker-compose.prod.yml exec web wget -qO- http://localhost/api/health/ready
-```
-
-Deve responder `"status":"ok"` com `postgres`, `redis` e `waha` em `up`. (Não há porta no
-host para testar com `curl` de fora — é assim de propósito.)
-
----
-
-## 5. Cadastre no Nginx Proxy Manager
+## 4. Cadastre no Nginx Proxy Manager
 
 O painel trafega credenciais e o conteúdo das conversas: só exponha em HTTPS.
 
@@ -156,7 +93,7 @@ docker exec <container-do-npm> wget -qO- http://waha-gateway-w51-web/api/health/
 ```
 
 Se responder JSON, siga. Se der *bad address*, o NPM não está na rede `npm-proxy` —
-volte ao passo 3.
+rode `./scripts/prod-up.sh` de novo.
 
 ### Proxy Host
 
@@ -232,7 +169,7 @@ para a API são bloqueadas. Após mudar: `docker compose -f docker-compose.prod.
 
 ---
 
-## 6. Primeiro acesso
+## 5. Primeiro acesso
 
 1. Abra `https://gateway.seu-dominio.com`
 2. Entre com `ADMIN_USERNAME` e a senha gerada
@@ -247,7 +184,7 @@ para a API são bloqueadas. Após mudar: `docker compose -f docker-compose.prod.
 
 ```bash
 git pull
-docker compose -f docker-compose.prod.yml up -d --build
+./scripts/prod-up.sh
 ```
 
 As migrations rodam sozinhas antes de a API subir. **Faça backup antes** de qualquer
